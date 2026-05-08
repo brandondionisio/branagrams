@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Layout } from "../../components/Layout";
-import tileStack from "../../assets/tileStack.png";
+import tileStack from "../../assets/tileStack.svg";
 
 export function Home() {
   return (
