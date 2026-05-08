@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { Home } from "./pages/home/Home";
-import { Solver } from "./pages/solver/Solver";
+import { Home } from "./pages/home/Home.component";
+import { Solver } from "./pages/solver/Solver.component";
 import { Game } from "./pages/game/Game.component";
 
 export default function App() {
