@@ -22,7 +22,7 @@ export function Home() {
               >
                 Game Pigeon
               </Link>{" "}
-              game Anagrams.
+              game, Anagrams.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <Link
