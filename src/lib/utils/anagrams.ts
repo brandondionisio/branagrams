@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import topWordsJson from "./top-words.json";
+import topWordsJson from "../data/topWords.json";
 
 interface PrecomputedEntry {
   count: number;
@@ -95,25 +95,51 @@ function countsOf(s: string): Int8Array {
   return c;
 }
 
+function wordMatchesLettersAndWildcards(
+  avail: Int8Array,
+  wildcards: number,
+  need: Int8Array,
+): boolean {
+  let w = wildcards;
+  for (let k = 0; k < 26; k++) {
+    const deficit = need[k] - avail[k];
+    if (deficit <= 0) continue;
+    if (deficit > w) return false;
+    w -= deficit;
+  }
+  return true;
+}
+
 export function findAnagrams(input: string, minLen = 2): string[] {
   if (!loaded) return [];
-  const cleaned = input.toLowerCase().replace(/[^a-z]/g, "");
-  if (!cleaned) return [];
-  const avail = countsOf(cleaned);
-  const max = cleaned.length;
+  const raw = input.toLowerCase().replace(/[^a-z?]/g, "");
+  let wildcards = 0;
+  let letterBuf = "";
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (ch === "?") wildcards++;
+    else letterBuf += ch;
+  }
+  if (!letterBuf && wildcards === 0) return [];
+  const avail = countsOf(letterBuf);
+  const maxLen = letterBuf.length + wildcards;
   const results: string[] = [];
   for (let i = 0; i < WORDS.length; i++) {
     const w = WORDS[i];
-    if (w.length < minLen || w.length > max) continue;
+    if (w.length < minLen || w.length > maxLen) continue;
     const c = WORD_COUNTS[i];
-    let ok = true;
-    for (let k = 0; k < 26; k++) {
-      if (c[k] > avail[k]) {
-        ok = false;
-        break;
+    if (wildcards === 0) {
+      let ok = true;
+      for (let k = 0; k < 26; k++) {
+        if (c[k] > avail[k]) {
+          ok = false;
+          break;
+        }
       }
+      if (ok) results.push(w);
+    } else if (wordMatchesLettersAndWildcards(avail, wildcards, c)) {
+      results.push(w);
     }
-    if (ok) results.push(w);
   }
   return results.sort((a, b) => b.length - a.length || a.localeCompare(b));
 }

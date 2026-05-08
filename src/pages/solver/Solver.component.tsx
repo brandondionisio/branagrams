@@ -1,66 +1,15 @@
 import { useDeferredValue, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Layout } from "../components/Layout";
-import { GAME_PREFILL_CUSTOM_LETTERS_KEY } from "../locationStateKeys";
+import { Layout } from "../../components/Layout";
 import {
   groupPastelAtIndex,
   groupWordsByLetterMultiset,
   letterMultisetKey,
-} from "../lib/anagramGroups";
-import { findAnagrams, useDictionary } from "../lib/anagrams";
+} from "../../lib/utils/anagramGroups";
+import { findAnagrams, useDictionary } from "../../lib/utils/anagrams";
+import { MIN_LENGTHS } from "./Solver.config";
+import { SolverWordChip } from "./Solver.utils";
 
-const MIN_LENGTHS = [2, 3, 4, 5, 6, 7] as const;
-
-function FinderWordChip({
-  word,
-  fill,
-  onUseInFinder,
-}: {
-  word: string;
-  fill: string;
-  onUseInFinder: (w: string) => void;
-}) {
-  const navigate = useNavigate();
-
-  return (
-    <span className="group relative inline-block align-middle">
-      <span
-        className="block cursor-default rounded-md px-2.5 py-1.5 font-mono text-sm leading-normal text-ink ring-1 ring-ink/6"
-        style={{ backgroundColor: fill }}
-      >
-        {word}
-      </span>
-      <div
-        className="pointer-events-none invisible absolute left-0 top-[calc(100%-6px)] z-30 min-w-36 rounded-md border border-border-subtle bg-page-bg-secondary py-1 opacity-0 shadow-md transition-opacity duration-100 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100"
-        role="menu"
-        aria-label={`Use “${word}” in…`}
-      >
-        <button
-          type="button"
-          role="menuitem"
-          className="block w-full px-3 py-2 text-left font-mono text-xs text-ink transition hover:bg-page-bg-tertiary"
-          onClick={() => onUseInFinder(word)}
-        >
-          Finder
-        </button>
-        <button
-          type="button"
-          role="menuitem"
-          className="block w-full px-3 py-2 text-left font-mono text-xs text-ink transition hover:bg-page-bg-tertiary"
-          onClick={() =>
-            navigate("/game", {
-              state: { [GAME_PREFILL_CUSTOM_LETTERS_KEY]: word },
-            })
-          }
-        >
-          Game
-        </button>
-      </div>
-    </span>
-  );
-}
-
-export function Finder() {
+export function Solver() {
   const lettersInputRef = useRef<HTMLInputElement>(null);
   const ready = useDictionary();
   const [input, setInput] = useState("");
@@ -85,7 +34,7 @@ export function Finder() {
     <Layout>
       <section className="px-8 pb-20 pt-10 sm:px-16 lg:px-0">
         <p className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
-          / finder
+          / solver
         </p>
         <h1 className="mb-12 text-5xl tracking-tight text-ink sm:text-6xl">
           Reveal anagrams
@@ -93,11 +42,49 @@ export function Finder() {
 
         <div className="space-y-8">
           <div>
-            <label className="mb-3 block font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
-              Letters
-            </label>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <label
+                htmlFor="solver-letters"
+                className="font-mono text-xs uppercase tracking-[0.2em] text-text-secondary"
+              >
+                Letters
+              </label>
+              <div className="group relative shrink-0">
+                <button
+                  type="button"
+                  aria-describedby="solver-help-tip"
+                  className="relative z-10 flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-text-secondary/35 bg-page-bg text-[11px] font-semibold leading-none text-text-secondary transition hover:border-accent/50 hover:text-accent focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:h-6 sm:w-6 sm:text-xs"
+                  aria-label="How Solver letters work"
+                >
+                  i
+                </button>
+                <div
+                  id="solver-help-tip"
+                  role="tooltip"
+                  className="pointer-events-none invisible absolute bottom-[calc(100%+0.5rem)] right-0 z-20 w-[min(19rem,calc(100vw-6rem))] rounded-md border border-border-subtle bg-page-bg-secondary px-3 py-2.5 text-left text-xs leading-snug text-ink opacity-0 shadow-md transition-opacity duration-100 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+                >
+                  <p>
+                    Results list dictionary words made from the letters you
+                    type.
+                  </p>
+                  <p className="mt-1">
+                    <span className="font-mono text-text-secondary">?</span> is
+                    a wildcard letter: each one can stand for any possible
+                    letter.
+                  </p>
+                  <p className="mt-1">
+                    Use{" "}
+                    <span className="font-mono text-text-secondary">
+                      Min length
+                    </span>{" "}
+                    to omit short words from the list.
+                  </p>
+                </div>
+              </div>
+            </div>
             <input
               ref={lettersInputRef}
+              id="solver-letters"
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -144,9 +131,7 @@ export function Finder() {
             loading dictionary…
           </p>
         ) : results.length === 0 ? (
-          <p className="text-sm text-text-secondary">
-            No words found. Try different letters.
-          </p>
+          <p className="text-sm text-text-secondary">No words found.</p>
         ) : (
           <div className="space-y-8">
             {grouped.map(([len, ws]) => (
@@ -161,11 +146,11 @@ export function Finder() {
                     return (
                       <div key={sig} className="inline-flex flex-wrap gap-1.5">
                         {cluster.map((w) => (
-                          <FinderWordChip
+                          <SolverWordChip
                             key={w}
                             word={w}
                             fill={fill}
-                            onUseInFinder={(picked) => {
+                            onUseInSolver={(picked) => {
                               setInput(picked);
                               lettersInputRef.current?.focus();
                               lettersInputRef.current?.scrollIntoView({

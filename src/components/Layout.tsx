@@ -41,14 +41,14 @@ function Header({ variant }: { variant: "home" | "page" }) {
       ) : (
         <nav className="flex items-baseline gap-6 text-sm leading-none">
           <NavLink
-            to="/finder"
+            to="/solver"
             className={({ isActive }) =>
               isActive
                 ? "font-medium text-ink underline underline-offset-4"
                 : "text-text-secondary transition hover:text-ink"
             }
           >
-            Finder
+            Solver
           </NavLink>
           <NavLink
             to="/game"

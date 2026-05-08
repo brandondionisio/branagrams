@@ -2,8 +2,6 @@
 
 @custom-variant hover (&:hover);
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 @theme {
   --font-sans: "Rubik", system-ui, sans-serif;
   --font-display: "Fraunces", "Times New Roman", serif;
@@ -22,40 +20,6 @@
   --color-destructive: #dc2626;
 }
 
-:root {
-  --text-primary: #2d2d2d;
-  --text-secondary: #6b6b6b;
-  --font-sans: "Rubik", system-ui, sans-serif;
-  --off-white: #fafaf8;
-  --border-subtle: #e0e0e0;
-  --page-bg: #fafaf8;
-  --page-bg-secondary: #ffffff;
-  --page-bg-tertiary: #f4f3ee;
-  --accent: #db2777;
-  --gray-dark: 45, 45, 45;
-  --gray: 107, 107, 107;
-  --gray-light: 237, 237, 237;
-  --black: 23, 23, 23;
-  --pre-bg: 45, 45, 45;
-  --pre-fg: 255, 255, 255;
-}
-
-html.dark {
-  --text-primary: #ececec;
-  --text-secondary: #a3a3a3;
-  --off-white: #121214;
-  --border-subtle: #3f3f46;
-  --page-bg: #0c0c0f;
-  --page-bg-secondary: #2e2e33;
-  --page-bg-tertiary: #37373c;
-  --gray-dark: 236, 236, 236;
-  --gray: 161, 161, 170;
-  --gray-light: 39, 39, 42;
-  --black: 250, 250, 250;
-  --pre-bg: 24, 24, 27;
-  --pre-fg: 228, 228, 231;
-}
-
 html {
   min-height: 100%;
   min-height: 100dvh;
@@ -64,24 +28,20 @@ html {
 }
 
 body {
-  font-family: var(--font-sans);
+  font-family: "Rubik", system-ui, sans-serif;
   margin: 0;
   padding: 0;
   text-align: left;
-  background: var(--page-bg);
+  background: #fafaf8;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  color: rgb(var(--gray-dark));
+  color: #2d2d2d;
   font-size: 1rem;
   line-height: 1.7;
   overflow-x: hidden;
 }
 
 @layer base {
-  p {
-    margin-bottom: 1em;
-  }
-
   a {
     color: inherit;
     text-decoration: none;
