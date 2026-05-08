@@ -1,4 +1,9 @@
 import type { ReactNode } from "react";
+import {
+  groupWordsByLetterMultiset,
+  letterMultisetKey,
+  groupPastelAtIndex,
+} from "../../lib/utils/anagramGroups";
 
 export function pointsForWordLength(length: number): number {
   switch (length) {
@@ -74,5 +79,110 @@ export function Chip({
     >
       {children}
     </button>
+  );
+}
+
+export function AnswersByLengthSection({
+  groupedAllByLength,
+  foundSet,
+  hintUnfound,
+}: {
+  groupedAllByLength: [number, string[]][];
+  foundSet: Set<string>;
+  hintUnfound: boolean;
+}) {
+  if (groupedAllByLength.length === 0) return null;
+
+  return (
+    <section>
+      <p className="mb-2 font-mono text-xs text-text-secondary">
+        <span className="text-success">found {foundSet.size}</span>
+        <span className="text-text-secondary"> · </span>
+        <span className="text-destructive">
+          missed{" "}
+          {groupedAllByLength.reduce((n, [, ws]) => n + ws.length, 0) -
+            foundSet.size}
+        </span>
+      </p>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-2">
+        {groupedAllByLength.map(([len, ws]) => {
+          const ptsEach = pointsForWordLength(len);
+          return (
+            <div
+              key={len}
+              className="rounded-lg border border-border-subtle bg-page-bg-secondary px-2 py-1.5 shadow-sm"
+            >
+              <p className="mb-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-text-secondary">
+                {len} letters
+              </p>
+              <p className="mb-1 border-b border-border-subtle/80 pb-1 font-mono text-[10px] font-semibold tabular-nums text-ink">
+                {ptsEach.toLocaleString()} pts
+              </p>
+              <div className="flex min-w-0 flex-col gap-1.5">
+                {groupWordsByLetterMultiset(ws).map((cluster, clusterIdx) => {
+                  const sig = letterMultisetKey(cluster[0]);
+                  const groupColor = groupPastelAtIndex(clusterIdx);
+                  return (
+                    <div
+                      key={sig}
+                      className="relative flex min-w-0 flex-col gap-0.5 pr-2.5"
+                    >
+                      <div
+                        aria-hidden
+                        className="pointer-events-none absolute top-0 right-0 bottom-0 z-1 flex w-2 flex-col items-center"
+                      >
+                        <div
+                          className="h-0.5 w-2 shrink-0 rounded-sm"
+                          style={{ backgroundColor: groupColor }}
+                        />
+                        <div className="flex min-h-0 w-full min-w-0 flex-1 justify-center">
+                          <div
+                            className="h-full w-0.5"
+                            style={{ backgroundColor: groupColor }}
+                          />
+                        </div>
+                        <div
+                          className="h-0.5 w-2 shrink-0 rounded-sm"
+                          style={{ backgroundColor: groupColor }}
+                        />
+                      </div>
+                      {cluster.map((w) => {
+                        const got = foundSet.has(w);
+                        let row: ReactNode;
+                        if (hintUnfound && !got) {
+                          row = (
+                            <span
+                              key={w}
+                              className="block min-h-4.5 min-w-0 rounded-r border-l-[3px] border-border-subtle bg-border-subtle/45"
+                              aria-label={`Hidden word, ${w.length} letters`}
+                            />
+                          );
+                        } else {
+                          row = (
+                            <span
+                              key={w}
+                              aria-label={got ? `${w}, found` : `${w}, missed`}
+                              title={got ? "Found" : "Missed"}
+                              className={`block min-w-0 truncate rounded-r py-0.5 pl-2 pr-2 font-mono text-[11px] leading-tight ${
+                                got
+                                  ? "border-l-[3px] border-success bg-success/20 font-semibold text-success"
+                                  : "border-l-[3px] border-destructive/60 bg-destructive/11 font-normal text-text-secondary"
+                              }`}
+                            >
+                              {w}
+                            </span>
+                          );
+                        }
+                        return row;
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

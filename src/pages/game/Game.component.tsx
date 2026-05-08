@@ -2,11 +2,6 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Layout } from "../../components/Layout";
 import {
-  groupPastelAtIndex,
-  groupWordsByLetterMultiset,
-  letterMultisetKey,
-} from "../../lib/utils/anagramGroups";
-import {
   findAnagrams,
   getRankOfWord,
   randomWord,
@@ -22,7 +17,13 @@ import {
   MIN_LENGTHS,
   GAME_PREFILL_CUSTOM_LETTERS_KEY,
 } from "./Game.config";
-import { scramble, pointsForWordLength, Field, Chip } from "./Game.utils";
+import {
+  scramble,
+  pointsForWordLength,
+  Field,
+  Chip,
+  AnswersByLengthSection,
+} from "./Game.utils";
 
 export function Game() {
   const location = useLocation();
@@ -43,7 +44,66 @@ export function Game() {
   const [guess, setGuess] = useState("");
   const [timeLeft, setTimeLeft] = useState(0);
   const [flash, setFlash] = useState<"ok" | "bad" | "dup" | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const guessRef = useRef("");
+
+  useEffect(() => {
+    guessRef.current = guess;
+  }, [guess]);
+
+  useEffect(() => {
+    if (phase !== "playing") return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      if (target === inputRef.current) return;
+
+      if (target instanceof HTMLTextAreaElement) return;
+
+      if (target instanceof HTMLInputElement) {
+        if (target.type === "checkbox" && e.key === " ") return;
+        if (
+          target.type === "text" ||
+          target.type === "search" ||
+          target.type === "url" ||
+          target.type === "email" ||
+          target.type === "password"
+        ) {
+          return;
+        }
+      }
+
+      if (e.key === "Enter") {
+        if (guessRef.current.trim()) {
+          e.preventDefault();
+          formRef.current?.requestSubmit();
+        }
+        return;
+      }
+
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        setGuess((g) => g.slice(0, -1));
+        queueMicrotask(() => inputRef.current?.focus());
+        return;
+      }
+
+      if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
+        e.preventDefault();
+        setGuess((g) => g + e.key.toLowerCase());
+        queueMicrotask(() => inputRef.current?.focus());
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== "setup") return;
@@ -72,6 +132,7 @@ export function Game() {
     setAnswers(new Set(list));
     setFound([]);
     setGuess("");
+    setShowHelp(false);
     setTimeLeft(duration);
     setPhase("playing");
     setTimeout(() => inputRef.current?.focus(), 50);
@@ -280,7 +341,7 @@ export function Game() {
               </div>
             </div>
 
-            <form onSubmit={submit}>
+            <form ref={formRef} onSubmit={submit}>
               <input
                 ref={inputRef}
                 type="text"
@@ -302,7 +363,7 @@ export function Game() {
               />
             </form>
 
-            <div className="mt-5 mb-5 flex items-baseline justify-between gap-4">
+            <div className="mt-5 mb-5 flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
               <p className="flex flex-col sm:flex-row font-mono text-sm">
                 <div>
                   <span className="text-ink">{found.length}</span>
@@ -323,25 +384,49 @@ export function Game() {
                   )}
                 </div>
               </p>
-              <button
-                onClick={() => setPhase("ended")}
-                className="font-mono cursor-pointer text-sm text-text-secondary transition hover:text-ink"
-              >
-                give up
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-0">
+                <label className="inline-flex w-fit cursor-pointer items-center gap-2 font-mono text-sm text-text-secondary select-none">
+                  <input
+                    type="checkbox"
+                    checked={showHelp}
+                    onChange={(e) => setShowHelp(e.target.checked)}
+                    className="size-4 shrink-0 rounded border-border-subtle accent-ink"
+                  />
+                  Help
+                </label>
+                <span
+                  className="hidden h-8 w-px shrink-0 bg-border-subtle sm:mx-4 sm:block"
+                  aria-hidden
+                />
+                <button
+                  type="button"
+                  onClick={() => setPhase("ended")}
+                  className="w-fit font-mono text-sm text-text-secondary underline decoration-border-subtle underline-offset-4 transition hover:text-ink hover:decoration-ink/40"
+                >
+                  give up
+                </button>
+              </div>
             </div>
 
-            {found.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {found.map((w) => (
-                  <span
-                    key={w}
-                    className="rounded-md bg-success/10 px-2.5 py-1 font-mono text-sm text-success"
-                  >
-                    {w}
-                  </span>
-                ))}
-              </div>
+            {showHelp ? (
+              <AnswersByLengthSection
+                groupedAllByLength={groupedAllByLength}
+                foundSet={foundSet}
+                hintUnfound
+              />
+            ) : (
+              found.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {found.map((w) => (
+                    <span
+                      key={w}
+                      className="rounded-md bg-success/10 px-2.5 py-1 font-mono text-sm text-success"
+                    >
+                      {w}
+                    </span>
+                  ))}
+                </div>
+              )
             )}
           </div>
         )}
@@ -397,94 +482,11 @@ export function Game() {
               </div>
             </div>
 
-            {groupedAllByLength.length > 0 && (
-              <section>
-                <p className="mb-2 font-mono text-xs text-text-secondary">
-                  <span className="text-success">found {found.length}</span>
-                  <span className="text-text-secondary"> · </span>
-                  <span className="text-destructive">
-                    missed {answers.size - found.length}
-                  </span>
-                </p>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-2">
-                  {groupedAllByLength.map(([len, ws]) => {
-                    const ptsEach = pointsForWordLength(len);
-                    return (
-                      <div
-                        key={len}
-                        className="rounded-lg border border-border-subtle bg-page-bg-secondary px-2 py-1.5 shadow-sm"
-                      >
-                        <p className="mb-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-text-secondary">
-                          {len} letters
-                        </p>
-                        <p className="mb-1 border-b border-border-subtle/80 pb-1 font-mono text-[10px] font-semibold tabular-nums text-ink">
-                          {ptsEach.toLocaleString()} pts
-                        </p>
-                        <div className="flex min-w-0 flex-col gap-1.5">
-                          {groupWordsByLetterMultiset(ws).map(
-                            (cluster, clusterIdx) => {
-                              const sig = letterMultisetKey(cluster[0]);
-                              const groupColor = groupPastelAtIndex(clusterIdx);
-                              return (
-                                <div
-                                  key={sig}
-                                  className="relative flex min-w-0 flex-col gap-0.5 pr-2.5"
-                                >
-                                  <div
-                                    aria-hidden
-                                    className="pointer-events-none absolute top-0 right-0 bottom-0 z-1 flex w-2 flex-col items-center"
-                                  >
-                                    <div
-                                      className="h-0.5 w-2 shrink-0 rounded-sm"
-                                      style={{
-                                        backgroundColor: groupColor,
-                                      }}
-                                    />
-                                    <div className="flex min-h-0 w-full min-w-0 flex-1 justify-center">
-                                      <div
-                                        className="h-full w-0.5"
-                                        style={{
-                                          backgroundColor: groupColor,
-                                        }}
-                                      />
-                                    </div>
-                                    <div
-                                      className="h-0.5 w-2 shrink-0 rounded-sm"
-                                      style={{
-                                        backgroundColor: groupColor,
-                                      }}
-                                    />
-                                  </div>
-                                  {cluster.map((w) => {
-                                    const got = foundSet.has(w);
-                                    return (
-                                      <span
-                                        key={w}
-                                        aria-label={
-                                          got ? `${w}, found` : `${w}, missed`
-                                        }
-                                        title={got ? "Found" : "Missed"}
-                                        className={`block min-w-0 truncate rounded-r py-0.5 pl-2 pr-2 font-mono text-[11px] leading-tight ${
-                                          got
-                                            ? "border-l-[3px] border-success bg-success/20 font-semibold text-success"
-                                            : "border-l-[3px] border-destructive/60 bg-destructive/11 font-normal text-text-secondary"
-                                        }`}
-                                      >
-                                        {w}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            },
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
+            <AnswersByLengthSection
+              groupedAllByLength={groupedAllByLength}
+              foundSet={foundSet}
+              hintUnfound={false}
+            />
           </div>
         )}
       </section>
