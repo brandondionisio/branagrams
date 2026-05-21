@@ -464,11 +464,13 @@ export function Game() {
                 <span className="font-mono text-ink">
                   {letters.toUpperCase()}
                 </span>
-                <span className="text-text-secondary">
-                  {" · "}
-                  rank #{rankInfo.rank.toLocaleString()} of{" "}
-                  {rankInfo.total.toLocaleString()}
-                </span>
+                {rankInfo && (
+                  <span className="text-text-secondary">
+                    {" · "}
+                    rank #{rankInfo.rank.toLocaleString()} of{" "}
+                    {rankInfo.total.toLocaleString()}
+                  </span>
+                )}
               </p>
 
               <div className="flex flex-wrap gap-3">
