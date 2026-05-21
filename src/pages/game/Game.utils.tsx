@@ -1,4 +1,11 @@
-import type { ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import {
   groupWordsByLetterMultiset,
   letterMultisetKey,
@@ -47,6 +54,190 @@ export function pointsForWordLength(length: number): number {
       if (length >= 7) return 2000 + (length - 6) * 1000;
       return 0;
   }
+}
+
+export function useMaxMd(): boolean {
+  const [maxMd, setMaxMd] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setMaxMd(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return maxMd;
+}
+
+function tileGridStyle(count: number): CSSProperties {
+  return {
+    gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))`,
+  };
+}
+
+const tileButtonClass =
+  "flex aspect-square w-full items-center justify-center touch-manipulation rounded-xl border-2 border-border-subtle bg-page-bg-secondary font-display text-[1.75rem] font-semibold uppercase leading-none text-ink shadow-[0_3px_0_0_var(--color-border-subtle)] outline-none transition active:scale-95 hover:border-ink/25 hover:bg-page-bg";
+
+const tileEmptyClass =
+  "aspect-square w-full rounded-xl border-2 border-border-subtle/70 bg-page-bg-tertiary/60";
+
+export function GuessUnderlineInput({
+  slotCount,
+  displayLetters,
+  guess,
+  pickedIndices,
+  flash,
+  inputRef,
+  onReturn,
+  onGuessKeyDown,
+}: {
+  slotCount: number;
+  displayLetters: string;
+  guess: string;
+  pickedIndices: number[];
+  flash: "ok" | "bad" | "dup" | null;
+  inputRef: RefObject<HTMLInputElement | null>;
+  onReturn: (slotIndex: number) => void;
+  onGuessKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
+}) {
+  const activeSlot = Math.min(guess.length, slotCount - 1);
+
+  return (
+    <div
+      role="group"
+      aria-label="Enter your guess"
+      className={`relative mb-4 grid cursor-text gap-2 rounded-2xl px-2 py-4 transition-colors ${
+        flash === "ok"
+          ? "bg-success/15"
+          : flash === "bad"
+            ? "bg-destructive/15"
+            : flash === "dup"
+              ? "bg-orange-300/20"
+              : "bg-page-bg-tertiary/50"
+      }`}
+      style={tileGridStyle(slotCount)}
+      onPointerDown={() => inputRef.current?.focus()}
+    >
+      <input
+        ref={inputRef}
+        type="text"
+        value={guess}
+        tabIndex={0}
+        onChange={() => {}}
+        onKeyDown={onGuessKeyDown}
+        onPaste={(e) => e.preventDefault()}
+        aria-label="Type letters for your guess"
+        autoComplete="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        className="absolute inset-0 z-0 h-full w-full cursor-text opacity-0"
+      />
+      {Array.from({ length: slotCount }, (_, slotIndex) => {
+        const tileIndex = pickedIndices[slotIndex];
+        const letter =
+          tileIndex !== undefined ? displayLetters[tileIndex] : null;
+        const isActive = !letter && slotIndex === activeSlot;
+
+        return (
+          <div key={slotIndex} className="relative z-10 aspect-square w-full">
+            {letter ? (
+              <div
+                role="button"
+                tabIndex={-1}
+                key={`slot-${slotIndex}-${tileIndex}`}
+                aria-label={`Return ${letter.toUpperCase()} to tiles`}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  onReturn(slotIndex);
+                }}
+                className={`${tileButtonClass} animate-letter-enter-slot h-full min-h-11`}
+              >
+                {letter}
+              </div>
+            ) : (
+              <div className="flex h-full min-h-11 w-full flex-col items-center justify-end pb-2">
+                <div className="w-full flex-1" aria-hidden />
+                <div
+                  className={`h-0.5 w-[85%] shrink-0 rounded-full transition-colors ${
+                    isActive ? "bg-ink" : "bg-border-subtle"
+                  }`}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function MobileLetterBank({
+  tiles,
+  pickedIndices,
+  onPick,
+}: {
+  tiles: string;
+  pickedIndices: number[];
+  onPick: (index: number) => void;
+}) {
+  const picked = new Set(pickedIndices);
+  const count = tiles.length;
+
+  return (
+    <div className="grid gap-2" style={tileGridStyle(count)}>
+      {tiles.split("").map((letter, index) => {
+        const used = picked.has(index);
+        if (used) {
+          return <div key={`empty-${index}`} className={tileEmptyClass} />;
+        }
+        return (
+          <div
+            key={`tile-${index}-${letter}`}
+            role="button"
+            tabIndex={-1}
+            aria-label={`Add ${letter.toUpperCase()} to your guess`}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onPick(index);
+            }}
+            className={`${tileButtonClass} animate-letter-return-bank`}
+          >
+            {letter}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function MobileEnterButton({
+  disabled,
+  onSubmit,
+}: {
+  disabled: boolean;
+  onSubmit: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onSubmit}
+      className="mb-4 w-full rounded-2xl border border-border-subtle bg-page-bg-secondary py-4 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      Enter
+    </button>
+  );
+}
+
+export function MobileLetterDock({ children }: { children: ReactNode }) {
+  return (
+    <div className="fixed inset-x-0 bottom-3 z-20 bg-page-bg/95 px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm md:hidden">
+      <div className="mx-auto w-full max-w-2xl">{children}</div>
+    </div>
+  );
 }
 
 export function scramble(word: string): string {

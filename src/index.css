@@ -78,6 +78,36 @@ html.dark ::-moz-selection {
   color: #fafafa;
 }
 
+@keyframes letter-enter-slot {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes letter-return-bank {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-letter-enter-slot {
+  animation: letter-enter-slot 0.22s ease-out;
+}
+
+.animate-letter-return-bank {
+  animation: letter-return-bank 0.22s ease-out;
+}
+
 @media (max-width: 720px) {
   body {
     font-size: 0.9375rem;

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Layout } from "../../components/Layout";
 import {
@@ -24,6 +25,10 @@ import {
   Field,
   Chip,
   AnswersByLengthSection,
+  GuessUnderlineInput,
+  MobileLetterBank,
+  MobileEnterButton,
+  MobileLetterDock,
 } from "./Game.utils";
 
 export function Game() {
@@ -52,10 +57,62 @@ export function Game() {
   const cancelPointsAnim = useRef<(() => void) | null>(null);
   const [displayedPoints, setDisplayedPoints] = useState(0);
   const [pointsAnimating, setPointsAnimating] = useState(false);
-
+  const [pickedTileIndices, setPickedTileIndices] = useState<number[]>([]);
   useEffect(() => {
     guessRef.current = guess;
   }, [guess]);
+
+  function syncGuessFromPicks(indices: number[]) {
+    setGuess(indices.map((i) => displayLetters[i] ?? "").join(""));
+  }
+
+  function pickTile(index: number) {
+    if (pickedTileIndices.includes(index)) return;
+    if (pickedTileIndices.length >= letters.length) return;
+    const next = [...pickedTileIndices, index];
+    setPickedTileIndices(next);
+    syncGuessFromPicks(next);
+    queueMicrotask(() => inputRef.current?.focus());
+  }
+
+  function appendTypedLetter(letter: string) {
+    for (let i = 0; i < displayLetters.length; i++) {
+      if (!pickedTileIndices.includes(i) && displayLetters[i] === letter) {
+        pickTile(i);
+        return;
+      }
+    }
+  }
+
+  function handleGuessKeyDown(e: ReactKeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (guess.trim()) formRef.current?.requestSubmit();
+      return;
+    }
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      removeLastLetter();
+      return;
+    }
+    if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
+      e.preventDefault();
+      appendTypedLetter(e.key.toLowerCase());
+    }
+  }
+
+  function returnFromSlot(slotIndex: number) {
+    if (slotIndex >= pickedTileIndices.length) return;
+    const next = pickedTileIndices.filter((_, i) => i !== slotIndex);
+    setPickedTileIndices(next);
+    syncGuessFromPicks(next);
+  }
+
+  function removeLastLetter() {
+    const next = pickedTileIndices.slice(0, -1);
+    setPickedTileIndices(next);
+    syncGuessFromPicks(next);
+  }
 
   useEffect(() => {
     if (phase !== "playing") return;
@@ -93,21 +150,21 @@ export function Game() {
 
       if (e.key === "Backspace") {
         e.preventDefault();
-        setGuess((g) => g.slice(0, -1));
+        removeLastLetter();
         queueMicrotask(() => inputRef.current?.focus());
         return;
       }
 
       if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
         e.preventDefault();
-        setGuess((g) => g + e.key.toLowerCase());
+        appendTypedLetter(e.key.toLowerCase());
         queueMicrotask(() => inputRef.current?.focus());
       }
     };
 
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [phase]);
+  }, [phase, displayLetters, pickedTileIndices]);
 
   useEffect(() => {
     if (phase !== "setup") return;
@@ -156,6 +213,7 @@ export function Game() {
     setAnswers(new Set(list));
     setFound([]);
     setDisplayedPoints(0);
+    setPickedTileIndices([]);
     setGuess("");
     setShowHelp(false);
     setTimeLeft(duration);
@@ -201,6 +259,7 @@ export function Game() {
       setFlash("bad");
     }
     setGuess("");
+    setPickedTileIndices([]);
     setTimeout(() => setFlash(null), flashMs);
   }
 
@@ -342,7 +401,7 @@ export function Game() {
         )}
 
         {phase === "playing" && (
-          <div className="mx-auto max-w-2xl">
+          <div className="mx-auto max-w-2xl max-md:pb-44">
             <div className="mb-8 flex items-end justify-between">
               <div>
                 <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
@@ -382,29 +441,20 @@ export function Game() {
             </div>
 
             <form ref={formRef} onSubmit={submit}>
-              <input
-                ref={inputRef}
-                type="text"
-                value={guess}
-                onChange={(e) => setGuess(e.target.value)}
-                placeholder="type a word…"
-                className={`w-full rounded-2xl border-2 bg-page-bg-tertiary px-6 py-5 font-mono text-2xl lowercase text-ink outline-none transition placeholder:text-text-secondary/60 ${
-                  flash === "ok"
-                    ? "border-success"
-                    : flash === "bad"
-                      ? "border-destructive"
-                      : flash === "dup"
-                        ? "border-accent"
-                        : "border-transparent"
-                }`}
-                autoComplete="off"
-                autoCapitalize="off"
-                spellCheck={false}
+              <GuessUnderlineInput
+                slotCount={letters.length}
+                displayLetters={displayLetters}
+                guess={guess}
+                pickedIndices={pickedTileIndices}
+                flash={flash}
+                inputRef={inputRef}
+                onReturn={returnFromSlot}
+                onGuessKeyDown={handleGuessKeyDown}
               />
             </form>
 
-            <div className="mt-5 mb-5 flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
-              <p className="flex flex-col sm:flex-row font-mono text-sm">
+            <div className="mt-5 mb-5 flex gap-3 flex-row items-baseline justify-between">
+              <p className="flex flex-col gap-3 sm:flex-row font-mono text-sm">
                 <div>
                   <span className="text-ink">{found.length}</span>
                   <span className="text-text-secondary">
@@ -422,7 +472,7 @@ export function Game() {
                           : "text-text-secondary"
                     }`}
                   >
-                    <span className="mx-3" aria-hidden>
+                    <span className="mx-3 hidden sm:inline" aria-hidden>
                       ·
                     </span>
                     {displayedPoints.toLocaleString()} pts
@@ -452,6 +502,18 @@ export function Game() {
                 </button>
               </div>
             </div>
+
+            <MobileLetterDock>
+              <MobileEnterButton
+                disabled={guess.trim().length === 0}
+                onSubmit={() => formRef.current?.requestSubmit()}
+              />
+              <MobileLetterBank
+                tiles={displayLetters}
+                pickedIndices={pickedTileIndices}
+                onPick={pickTile}
+              />
+            </MobileLetterDock>
 
             {showHelp ? (
               <AnswersByLengthSection
