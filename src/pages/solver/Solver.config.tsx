@@ -3,7 +3,7 @@ export const GAME_PREFILL_CUSTOM_LETTERS_KEY = "prefillCustomLetters";
 
 export const SOLVER_RESULTS_VIEWS = [
   { id: "word-list", label: "Word list" },
-  { id: "grouped-table", label: "Grouped table" },
+  { id: "combo-table", label: "Combo table" },
   { id: "alphabetical-table", label: "Alphabetical table" },
 ] as const;
 

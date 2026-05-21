@@ -392,7 +392,7 @@ export function Game() {
                     onChange={(e) => setShowHelp(e.target.checked)}
                     className="size-4 shrink-0 rounded border-border-subtle accent-ink"
                   />
-                  Help
+                  help
                 </label>
                 <span
                   className="hidden h-8 w-px shrink-0 bg-border-subtle sm:mx-4 sm:block"
@@ -466,7 +466,9 @@ export function Game() {
                 </span>
                 {rankInfo && (
                   <span className="text-text-secondary">
-                    {" · "}
+                    <span className="mx-3" aria-hidden>
+                      ·
+                    </span>
                     rank #{rankInfo.rank.toLocaleString()} of{" "}
                     {rankInfo.total.toLocaleString()}
                   </span>

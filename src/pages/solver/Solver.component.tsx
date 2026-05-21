@@ -224,7 +224,7 @@ export function Solver() {
           <SolverResultsByLengthTable
             groupedByLength={groupedByLength}
             sortMode={
-              resultsView === "grouped-table" ? "multiset" : "alphabetical"
+              resultsView === "combo-table" ? "multiset" : "alphabetical"
             }
           />
         )}
