@@ -19,6 +19,7 @@ import {
 } from "./Game.config";
 import {
   scramble,
+  animateNumber,
   pointsForWordLength,
   Field,
   Chip,
@@ -48,6 +49,9 @@ export function Game() {
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const guessRef = useRef("");
+  const cancelPointsAnim = useRef<(() => void) | null>(null);
+  const [displayedPoints, setDisplayedPoints] = useState(0);
+  const [pointsAnimating, setPointsAnimating] = useState(false);
 
   useEffect(() => {
     guessRef.current = guess;
@@ -119,6 +123,23 @@ export function Game() {
     navigate(location.pathname, { replace: true, state: {} });
   }, [phase, location.pathname, location.state, navigate]);
 
+  useEffect(() => () => cancelPointsAnim.current?.(), []);
+
+  function foundPoints(words: string[]) {
+    return words.reduce((s, w) => s + pointsForWordLength(w.length), 0);
+  }
+
+  function animatePoints(from: number, to: number) {
+    cancelPointsAnim.current?.();
+    setPointsAnimating(true);
+    cancelPointsAnim.current = animateNumber(from, to, setDisplayedPoints, {
+      onDone: () => {
+        setPointsAnimating(false);
+        cancelPointsAnim.current = null;
+      },
+    });
+  }
+
   function start() {
     const word =
       source === "random"
@@ -126,11 +147,15 @@ export function Game() {
         : customLetters.toLowerCase().replace(/[^a-z]/g, "");
     if (!word) return;
     const list = findAnagrams(word, minLen);
+    cancelPointsAnim.current?.();
+    cancelPointsAnim.current = null;
+    setPointsAnimating(false);
     setLetters(word);
     setDisplayLetters(scramble(word));
     setRankInfo(getRankOfWord(word));
     setAnswers(new Set(list));
     setFound([]);
+    setDisplayedPoints(0);
     setGuess("");
     setShowHelp(false);
     setTimeLeft(duration);
@@ -162,16 +187,21 @@ export function Game() {
     e.preventDefault();
     const g = guess.toLowerCase().trim();
     if (!g) return;
+    let flashMs = 400;
     if (found.includes(g)) {
       setFlash("dup");
     } else if (answers.has(g)) {
+      const from = foundPoints(found);
+      const to = from + pointsForWordLength(g.length);
       setFound((f) => [g, ...f]);
       setFlash("ok");
+      animatePoints(from, to);
+      flashMs = 500;
     } else {
       setFlash("bad");
     }
     setGuess("");
-    setTimeout(() => setFlash(null), 400);
+    setTimeout(() => setFlash(null), flashMs);
   }
 
   const sortedAnswers = useMemo(
@@ -194,10 +224,7 @@ export function Game() {
 
   const foundSet = useMemo(() => new Set(found), [found]);
 
-  const endedTotalPoints = useMemo(
-    () => found.reduce((s, w) => s + pointsForWordLength(w.length), 0),
-    [found],
-  );
+  const endedTotalPoints = useMemo(() => foundPoints(found), [found]);
 
   const endedMaxPoints = useMemo(
     () => sortedAnswers.reduce((s, w) => s + pointsForWordLength(w.length), 0),
@@ -318,9 +345,22 @@ export function Game() {
           <div className="mx-auto max-w-2xl">
             <div className="mb-8 flex items-end justify-between">
               <div>
-                <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
-                  your letters
-                </p>
+                <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
+                  <span className="font-mono uppercase tracking-[0.2em]">
+                    your letters
+                  </span>
+                  {rankInfo && (
+                    <div className="text-sm">
+                      <span className="mx-3" aria-hidden>
+                        ·
+                      </span>
+                      <span>
+                        rank #{rankInfo.rank.toLocaleString()} of{" "}
+                        {rankInfo.total.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <p className="font-display text-5xl tracking-[0.15em] text-ink">
                   {displayLetters.toUpperCase()}
                 </p>
@@ -373,15 +413,20 @@ export function Game() {
                   </span>
                 </div>
                 <div>
-                  {rankInfo && (
-                    <span className="text-text-secondary">
-                      <span className="hidden whitespace-pre sm:inline">
-                        {" · "}
-                      </span>
-                      rank #{rankInfo.rank.toLocaleString()} of{" "}
-                      {rankInfo.total.toLocaleString()}
+                  <span
+                    className={`tabular-nums transition-colors duration-200 ${
+                      flash === "ok" || pointsAnimating
+                        ? "text-success"
+                        : flash === "bad"
+                          ? "text-destructive"
+                          : "text-text-secondary"
+                    }`}
+                  >
+                    <span className="mx-3" aria-hidden>
+                      ·
                     </span>
-                  )}
+                    {displayedPoints.toLocaleString()} pts
+                  </span>
                 </div>
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-0">

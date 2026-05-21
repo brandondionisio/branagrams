@@ -5,6 +5,32 @@ import {
   groupPastelAtIndex,
 } from "../../lib/utils/anagramGroups";
 
+export function animateNumber(
+  from: number,
+  to: number,
+  onUpdate: (value: number) => void,
+  options?: { duration?: number; onDone?: () => void },
+): () => void {
+  const duration = options?.duration ?? 450;
+  const start = performance.now();
+  let frame = 0;
+
+  const tick = (now: number) => {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - (1 - t) ** 3;
+    onUpdate(Math.round(from + (to - from) * eased));
+    if (t < 1) {
+      frame = requestAnimationFrame(tick);
+    } else {
+      onUpdate(to);
+      options?.onDone?.();
+    }
+  };
+
+  frame = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(frame);
+}
+
 export function pointsForWordLength(length: number): number {
   switch (length) {
     case 2:
