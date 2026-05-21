@@ -5,7 +5,7 @@ import tileStack from "../../assets/tileStack.svg";
 export function Home() {
   return (
     <Layout headerVariant="home">
-      <section className="px-8 pb-12 pt-12 sm:px-16 sm:pt-16 lg:px-0">
+      <section className="px-4 pb-12 pt-12 sm:px-16 sm:pt-16">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between sm:gap-10 lg:gap-14">
           <div className="min-w-0 sm:max-w-lg sm:flex-1">
             <p className="mb-6 font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">

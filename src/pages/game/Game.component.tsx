@@ -210,7 +210,7 @@ export function Game() {
 
   return (
     <Layout>
-      <section className="px-8 pb-20 pt-10 sm:px-16 lg:px-0">
+      <section className="px-4 pb-20 pt-10 sm:px-16">
         {phase === "setup" && (
           <>
             <p className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
@@ -463,6 +463,11 @@ export function Game() {
                 from{" "}
                 <span className="font-mono text-ink">
                   {letters.toUpperCase()}
+                </span>
+                <span className="text-text-secondary">
+                  {" · "}
+                  rank #{rankInfo.rank.toLocaleString()} of{" "}
+                  {rankInfo.total.toLocaleString()}
                 </span>
               </p>
 

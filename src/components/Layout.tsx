@@ -8,7 +8,7 @@ interface LayoutProps {
 
 export function Layout({ children, headerVariant = "page" }: LayoutProps) {
   return (
-    <div className="mx-auto flex min-h-svh w-full max-w-[1024px] flex-col bg-page-bg">
+    <div className="mx-auto flex min-h-svh w-full max-w-[1100px] flex-col bg-page-bg">
       <Header variant={headerVariant} />
       <main className="flex-1">{children}</main>
     </div>
@@ -17,7 +17,7 @@ export function Layout({ children, headerVariant = "page" }: LayoutProps) {
 
 function Header({ variant }: { variant: "home" | "page" }) {
   return (
-    <header className="flex items-baseline justify-between gap-4 px-8 py-7 sm:px-16 lg:px-0">
+    <header className="flex items-baseline justify-between gap-4 px-4 py-7 sm:px-16">
       <Link
         to="/"
         className="font-display text-xl leading-none tracking-tight text-accent"
@@ -65,4 +65,3 @@ function Header({ variant }: { variant: "home" | "page" }) {
     </header>
   );
 }
-

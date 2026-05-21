@@ -1,19 +1,32 @@
-import { useDeferredValue, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Layout } from "../../components/Layout";
 import {
   groupPastelAtIndex,
   groupWordsByLetterMultiset,
   letterMultisetKey,
 } from "../../lib/utils/anagramGroups";
-import { findAnagrams, useDictionary } from "../../lib/utils/anagrams";
-import { MIN_LENGTHS } from "./Solver.config";
-import { SolverWordChip } from "./Solver.utils";
+import {
+  findAnagrams,
+  getRankOfWord,
+  useDictionary,
+  type RankInfo,
+} from "../../lib/utils/anagrams";
+
+import {
+  MIN_LENGTHS,
+  SOLVER_RESULTS_VIEWS,
+  type SolverResultsView,
+} from "./Solver.config";
+import { SolverResultsByLengthTable, SolverWordChip } from "./Solver.utils";
 
 export function Solver() {
   const lettersInputRef = useRef<HTMLInputElement>(null);
   const ready = useDictionary();
   const [input, setInput] = useState("");
   const [minLen, setMinLen] = useState(3);
+  const [resultsView, setResultsView] =
+    useState<SolverResultsView>("word-list");
+  const [rankInfo, setRankInfo] = useState<RankInfo | null>(null);
 
   const deferredInput = useDeferredValue(input);
   const results = useMemo(
@@ -21,18 +34,27 @@ export function Solver() {
     [deferredInput, minLen, ready],
   );
 
-  const grouped = useMemo(() => {
+  useEffect(() => {
+    if (ready && deferredInput.length > 0) {
+      setRankInfo(getRankOfWord(deferredInput));
+    } else {
+      setRankInfo(null);
+    }
+  }, [ready, deferredInput]);
+
+  const groupedByLength = useMemo(() => {
     const m = new Map<number, string[]>();
     for (const w of results) {
       if (!m.has(w.length)) m.set(w.length, []);
       m.get(w.length)!.push(w);
     }
+    for (const [, ws] of m) ws.sort((a, b) => a.localeCompare(b));
     return Array.from(m.entries()).sort((a, b) => b[0] - a[0]);
   }, [results]);
 
   return (
     <Layout>
-      <section className="px-8 pb-20 pt-10 sm:px-16 lg:px-0">
+      <section className="px-4 pb-20 pt-10 sm:px-16">
         <p className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
           / solver
         </p>
@@ -96,34 +118,65 @@ export function Solver() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
-              Min length
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {MIN_LENGTHS.map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setMinLen(n)}
-                  className={`h-9 min-w-9 rounded-md px-2.5 font-mono text-sm transition ${
-                    minLen === n
-                      ? "bg-ink text-page-bg"
-                      : "bg-page-bg-tertiary text-ink hover:bg-border-subtle"
-                  }`}
-                >
-                  {n}+
-                </button>
-              ))}
+          <div className="flex flex-wrap items-center justify-between gap-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
+                Min length
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {MIN_LENGTHS.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setMinLen(n)}
+                    className={`h-9 min-w-9 rounded-md px-2.5 font-mono text-sm transition ${
+                      minLen === n
+                        ? "bg-ink text-page-bg"
+                        : "bg-page-bg-tertiary text-ink hover:bg-border-subtle"
+                    }`}
+                  >
+                    {n}+
+                  </button>
+                ))}
+              </div>
             </div>
+            {results.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {SOLVER_RESULTS_VIEWS.map(({ id, label }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setResultsView(id)}
+                      className={`h-9 rounded-md px-2.5 font-mono text-xs transition ${
+                        resultsView === id
+                          ? "bg-ink text-page-bg"
+                          : "bg-page-bg-tertiary text-ink hover:bg-border-subtle"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="mt-16 mb-6 flex items-baseline justify-between border-b border-border-subtle pb-3">
-          <h2 className="text-2xl text-ink">Results</h2>
-          <span className="font-mono text-sm text-text-secondary">
-            {results.length} words
-          </span>
+        <div className="mt-16 border-b border-border-subtle mb-6">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="text-2xl text-ink">Results</h2>
+            <span className="font-mono text-sm text-text-secondary">
+              {rankInfo && (
+                <span>
+                  rank #{rankInfo.rank.toLocaleString()} of{" "}
+                  {rankInfo.total.toLocaleString()}
+                  {" · "}
+                </span>
+              )}
+              {results.length} words
+            </span>
+          </div>
         </div>
 
         {!ready ? (
@@ -132,14 +185,14 @@ export function Solver() {
           </p>
         ) : results.length === 0 ? (
           <p className="text-sm text-text-secondary">No words found.</p>
-        ) : (
+        ) : resultsView === "word-list" ? (
           <div className="space-y-8">
-            {grouped.map(([len, ws]) => (
+            {groupedByLength.map(([len, ws]) => (
               <div key={len}>
                 <p className="mb-3 font-mono text-xs lowercase text-accent">
                   {len} letters · {ws.length}
                 </p>
-                <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+                <div className="flex flex-wrap items-start gap-x-1.5 gap-y-2">
                   {groupWordsByLetterMultiset(ws).map((cluster, clusterIdx) => {
                     const sig = letterMultisetKey(cluster[0]);
                     const fill = groupPastelAtIndex(clusterIdx);
@@ -167,6 +220,13 @@ export function Solver() {
               </div>
             ))}
           </div>
+        ) : (
+          <SolverResultsByLengthTable
+            groupedByLength={groupedByLength}
+            sortMode={
+              resultsView === "grouped-table" ? "multiset" : "alphabetical"
+            }
+          />
         )}
       </section>
     </Layout>
