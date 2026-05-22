@@ -103,13 +103,18 @@ export function GuessUnderlineInput({
   onReturn: (slotIndex: number) => void;
   onGuessKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
 }) {
+  const isMobile = useMaxMd();
   const activeSlot = Math.min(guess.length, slotCount - 1);
+
+  const focusGuessInput = () => inputRef.current?.focus();
 
   return (
     <div
       role="group"
       aria-label="Enter your guess"
-      className={`relative mb-4 grid cursor-text gap-2 rounded-2xl px-2 py-4 transition-colors ${
+      className={`relative mb-4 grid gap-2 rounded-2xl px-2 py-4 transition-colors ${
+        isMobile ? "" : "cursor-text"
+      } ${
         flash === "ok"
           ? "bg-success/15"
           : flash === "bad"
@@ -119,13 +124,13 @@ export function GuessUnderlineInput({
               : "bg-page-bg-tertiary/50"
       }`}
       style={tileGridStyle(slotCount)}
-      onPointerDown={() => inputRef.current?.focus()}
+      onPointerDown={isMobile ? undefined : focusGuessInput}
     >
       <input
         ref={inputRef}
         type="text"
         value={guess}
-        tabIndex={0}
+        tabIndex={isMobile ? -1 : 0}
         onChange={() => {}}
         onKeyDown={onGuessKeyDown}
         onPaste={(e) => e.preventDefault()}
@@ -133,7 +138,9 @@ export function GuessUnderlineInput({
         autoComplete="off"
         autoCapitalize="off"
         spellCheck={false}
-        className="absolute inset-0 z-0 h-full w-full cursor-text opacity-0"
+        className={`absolute inset-0 z-0 h-full w-full opacity-0 ${
+          isMobile ? "pointer-events-none" : "cursor-text"
+        }`}
       />
       {Array.from({ length: slotCount }, (_, slotIndex) => {
         const tileIndex = pickedIndices[slotIndex];
@@ -161,9 +168,22 @@ export function GuessUnderlineInput({
               <div className="flex h-full min-h-11 w-full flex-col items-center justify-end pb-2">
                 <div className="w-full flex-1" aria-hidden />
                 <div
+                  role={isMobile ? "button" : undefined}
+                  tabIndex={isMobile ? -1 : undefined}
+                  aria-label={
+                    isMobile ? "Type letters for your guess" : undefined
+                  }
+                  onPointerDown={
+                    isMobile
+                      ? (e) => {
+                          e.stopPropagation();
+                          focusGuessInput();
+                        }
+                      : undefined
+                  }
                   className={`h-0.5 w-[85%] shrink-0 rounded-full transition-colors ${
                     isActive ? "bg-ink" : "bg-border-subtle"
-                  }`}
+                  } ${isMobile ? "cursor-text touch-manipulation" : ""}`}
                 />
               </div>
             )}

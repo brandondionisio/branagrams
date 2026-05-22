@@ -29,12 +29,14 @@ import {
   MobileLetterBank,
   MobileEnterButton,
   MobileLetterDock,
+  useMaxMd,
 } from "./Game.utils";
 
 export function Game() {
   const location = useLocation();
   const navigate = useNavigate();
   const ready = useDictionary();
+  const isMobile = useMaxMd();
   const [phase, setPhase] = useState<Phase>("setup");
   const [duration, setDuration] = useState<Duration>(60);
   const [source, setSource] = useState<LetterSource>("random");
@@ -72,7 +74,9 @@ export function Game() {
     const next = [...pickedTileIndices, index];
     setPickedTileIndices(next);
     syncGuessFromPicks(next);
-    queueMicrotask(() => inputRef.current?.focus());
+    if (!isMobile) {
+      queueMicrotask(() => inputRef.current?.focus());
+    }
   }
 
   function appendTypedLetter(letter: string) {
@@ -151,20 +155,24 @@ export function Game() {
       if (e.key === "Backspace") {
         e.preventDefault();
         removeLastLetter();
-        queueMicrotask(() => inputRef.current?.focus());
+        if (!isMobile) {
+          queueMicrotask(() => inputRef.current?.focus());
+        }
         return;
       }
 
       if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
         e.preventDefault();
         appendTypedLetter(e.key.toLowerCase());
-        queueMicrotask(() => inputRef.current?.focus());
+        if (!isMobile) {
+          queueMicrotask(() => inputRef.current?.focus());
+        }
       }
     };
 
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [phase, displayLetters, pickedTileIndices]);
+  }, [phase, displayLetters, pickedTileIndices, isMobile]);
 
   useEffect(() => {
     if (phase !== "setup") return;
@@ -218,7 +226,9 @@ export function Game() {
     setShowHelp(false);
     setTimeLeft(duration);
     setPhase("playing");
-    setTimeout(() => inputRef.current?.focus(), 50);
+    if (!isMobile) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
   }
 
   useEffect(() => {
