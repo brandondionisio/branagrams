@@ -308,9 +308,7 @@ export function Game() {
     <Layout>
       <section
         className={`px-4 sm:px-16 ${
-          phase === "playing"
-            ? "max-md:overflow-hidden max-md:py-0"
-            : "pb-20 pt-10"
+          phase === "playing" ? "max-md:py-0" : "pb-20 pt-10"
         }`}
       >
         {phase === "setup" && (
@@ -417,131 +415,131 @@ export function Game() {
         )}
 
         {phase === "playing" && (
-          <div className="mx-auto flex w-full max-w-2xl flex-col max-md:h-[calc(100dvh-5rem)] max-md:max-h-[calc(100dvh-5rem)] max-md:overflow-hidden">
-            <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="mb-6 flex items-end justify-between max-md:mb-4">
-              <div>
-                <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
-                  <span className="font-mono uppercase tracking-[0.2em]">
-                    your letters
-                  </span>
-                  {rankInfo && (
-                    <div className="text-sm">
-                      <span className="mx-3" aria-hidden>
-                        ·
-                      </span>
-                      <span>
-                        rank #{rankInfo.rank.toLocaleString()} of{" "}
-                        {rankInfo.total.toLocaleString()}
+          <div className="mx-auto flex w-full max-w-2xl flex-col max-md:min-h-[calc(100dvh-5rem)]">
+            <div className="min-h-0 flex-1 max-md:overflow-y-auto">
+              <div className="mb-6 flex items-end justify-between max-md:mb-4">
+                <div>
+                  <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
+                    <span className="font-mono uppercase tracking-[0.2em]">
+                      your letters
+                    </span>
+                    {rankInfo && (
+                      <div className="text-sm">
+                        <span className="mx-3" aria-hidden>
+                          ·
+                        </span>
+                        <span>
+                          rank #{rankInfo.rank.toLocaleString()} of{" "}
+                          {rankInfo.total.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="font-display text-5xl tracking-[0.15em] text-ink">
+                    {displayLetters.toUpperCase()}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
+                    time
+                  </p>
+                  <p
+                    className={`font-display text-5xl tabular-nums ${
+                      duration !== 0 && timeLeft <= 10
+                        ? "text-destructive"
+                        : "text-ink"
+                    }`}
+                  >
+                    {duration === 0 ? "∞" : timeLeft}
+                  </p>
+                </div>
+              </div>
+
+              <form ref={formRef} onSubmit={submit}>
+                {!isMobile && (
+                  <GuessUnderlineInput
+                    slotCount={letters.length}
+                    displayLetters={displayLetters}
+                    guess={guess}
+                    pickedIndices={pickedTileIndices}
+                    flash={flash}
+                    inputRef={inputRef}
+                    onReturn={returnFromSlot}
+                    onGuessKeyDown={handleGuessKeyDown}
+                  />
+                )}
+
+                <div className="mt-4 mb-4 flex gap-3 flex-row items-baseline justify-between max-md:mt-3 max-md:mb-3">
+                  <p className="flex flex-col sm:flex-row font-mono text-sm">
+                    <div>
+                      <span className="text-ink">{found.length}</span>
+                      <span className="text-text-secondary">
+                        {" "}
+                        / {answers.size} found
                       </span>
                     </div>
-                  )}
-                </div>
-                <p className="font-display text-5xl tracking-[0.15em] text-ink">
-                  {displayLetters.toUpperCase()}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
-                  time
-                </p>
-                <p
-                  className={`font-display text-5xl tabular-nums ${
-                    duration !== 0 && timeLeft <= 10
-                      ? "text-destructive"
-                      : "text-ink"
-                  }`}
-                >
-                  {duration === 0 ? "∞" : timeLeft}
-                </p>
-              </div>
-            </div>
-
-            <form ref={formRef} onSubmit={submit}>
-              {!isMobile && (
-                <GuessUnderlineInput
-                  slotCount={letters.length}
-                  displayLetters={displayLetters}
-                  guess={guess}
-                  pickedIndices={pickedTileIndices}
-                  flash={flash}
-                  inputRef={inputRef}
-                  onReturn={returnFromSlot}
-                  onGuessKeyDown={handleGuessKeyDown}
-                />
-              )}
-
-              <div className="mt-4 mb-4 flex gap-3 flex-row items-baseline justify-between max-md:mt-3 max-md:mb-3">
-                <p className="flex flex-col sm:flex-row font-mono text-sm">
-                  <div>
-                    <span className="text-ink">{found.length}</span>
-                    <span className="text-text-secondary">
-                      {" "}
-                      / {answers.size} found
-                    </span>
-                  </div>
-                  <div>
-                    <span
-                      className={`tabular-nums transition-colors duration-200 ${
-                        flash === "ok" || pointsAnimating
-                          ? "text-success"
-                          : flash === "bad"
-                            ? "text-destructive"
-                            : "text-text-secondary"
-                      }`}
-                    >
-                      <span className="mx-3 hidden sm:inline" aria-hidden>
-                        ·
+                    <div>
+                      <span
+                        className={`tabular-nums transition-colors duration-200 ${
+                          flash === "ok" || pointsAnimating
+                            ? "text-success"
+                            : flash === "bad"
+                              ? "text-destructive"
+                              : "text-text-secondary"
+                        }`}
+                      >
+                        <span className="mx-3 hidden sm:inline" aria-hidden>
+                          ·
+                        </span>
+                        {displayedPoints.toLocaleString()} pts
                       </span>
-                      {displayedPoints.toLocaleString()} pts
-                    </span>
-                  </div>
-                </p>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-0">
-                  <label className="inline-flex w-fit cursor-pointer items-center gap-2 font-mono text-sm text-text-secondary select-none">
-                    <input
-                      type="checkbox"
-                      checked={showHelp}
-                      onChange={(e) => setShowHelp(e.target.checked)}
-                      className="size-4 shrink-0 rounded border-border-subtle accent-ink"
-                    />
-                    help
-                  </label>
-                  <span
-                    className="hidden h-8 w-px shrink-0 bg-border-subtle sm:mx-4 sm:block"
-                    aria-hidden
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setPhase("ended")}
-                    className="w-fit font-mono text-sm text-text-secondary underline decoration-border-subtle underline-offset-4 transition hover:text-ink hover:decoration-ink/40"
-                  >
-                    give up
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            {showHelp ? (
-              <AnswersByLengthSection
-                groupedAllByLength={groupedAllByLength}
-                foundSet={foundSet}
-                hintUnfound
-              />
-            ) : (
-              found.length > 0 && (
-                <div className="mb-4 flex flex-wrap gap-1.5">
-                  {found.map((w) => (
+                    </div>
+                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-0">
+                    <label className="inline-flex w-fit cursor-pointer items-center gap-2 font-mono text-sm text-text-secondary select-none">
+                      <input
+                        type="checkbox"
+                        checked={showHelp}
+                        onChange={(e) => setShowHelp(e.target.checked)}
+                        className="size-4 shrink-0 rounded border-border-subtle accent-ink"
+                      />
+                      help
+                    </label>
                     <span
-                      key={w}
-                      className="rounded-md bg-success/10 px-2.5 py-1 font-mono text-sm text-success"
+                      className="hidden h-8 w-px shrink-0 bg-border-subtle sm:mx-4 sm:block"
+                      aria-hidden
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setPhase("ended")}
+                      className="w-fit font-mono text-sm text-text-secondary underline decoration-border-subtle underline-offset-4 transition hover:text-ink hover:decoration-ink/40"
                     >
-                      {w}
-                    </span>
-                  ))}
+                      give up
+                    </button>
+                  </div>
                 </div>
-              )
-            )}
+              </form>
+
+              {showHelp ? (
+                <AnswersByLengthSection
+                  groupedAllByLength={groupedAllByLength}
+                  foundSet={foundSet}
+                  hintUnfound
+                />
+              ) : (
+                found.length > 0 && (
+                  <div className="mb-4 flex flex-wrap gap-1.5">
+                    {found.map((w) => (
+                      <span
+                        key={w}
+                        className="rounded-md bg-success/10 px-2.5 py-1 font-mono text-sm text-success"
+                      >
+                        {w}
+                      </span>
+                    ))}
+                  </div>
+                )
+              )}
             </div>
 
             {isMobile && (

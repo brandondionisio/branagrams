@@ -3,8 +3,6 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent,
-  type MouseEvent,
-  type PointerEvent,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -117,14 +115,40 @@ export function GuessUnderlineInput({
     input.focus({ preventScroll: false });
   };
 
-  const focusEmptySlot = (
-    e: PointerEvent<HTMLElement> | MouseEvent<HTMLElement>,
-  ) => {
-    e.stopPropagation();
-    focusGuessInput();
+  const scrollDockIntoView = () => {
+    if (!isMobile || !inDock) return;
+    requestAnimationFrame(() => {
+      inputRef.current
+        ?.closest("[data-mobile-game-dock]")
+        ?.scrollIntoView({ block: "end", behavior: "auto" });
+    });
   };
 
+  useEffect(() => {
+    if (!isMobile || !inDock) return;
+    const input = inputRef.current;
+    const vv = window.visualViewport;
+    if (!input || !vv) return;
+
+    const onViewportChange = () => {
+      if (document.activeElement !== input) return;
+      scrollDockIntoView();
+    };
+
+    input.addEventListener("focus", scrollDockIntoView);
+    vv.addEventListener("resize", onViewportChange);
+    vv.addEventListener("scroll", onViewportChange);
+    return () => {
+      input.removeEventListener("focus", scrollDockIntoView);
+      vv.removeEventListener("resize", onViewportChange);
+      vv.removeEventListener("scroll", onViewportChange);
+    };
+  }, [isMobile, inDock, inputRef]);
+
   const slotCellClass = "relative z-10 aspect-square w-full";
+
+  const slotPointerClass = isMobile ? "pointer-events-auto" : "";
+  const emptySlotPointerClass = isMobile ? "pointer-events-none" : "";
 
   return (
     <div
@@ -158,8 +182,11 @@ export function GuessUnderlineInput({
         autoComplete="off"
         autoCapitalize="off"
         spellCheck={false}
-        className={`absolute inset-0 z-0 h-full w-full text-base opacity-0 ${
-          isMobile ? "pointer-events-none" : "cursor-text"
+        onFocus={scrollDockIntoView}
+        className={`absolute inset-0 h-full w-full text-base caret-transparent text-transparent opacity-0 ${
+          isMobile
+            ? "z-[1] pointer-events-auto"
+            : "z-0 cursor-text pointer-events-none"
         }`}
       />
       {Array.from({ length: slotCount }, (_, slotIndex) => {
@@ -180,7 +207,7 @@ export function GuessUnderlineInput({
                   e.preventDefault();
                   onReturn(slotIndex);
                 }}
-                className={`${tileButtonClass} aspect-auto min-h-0 animate-letter-enter-slot h-full`}
+                className={`${tileButtonClass} ${slotPointerClass} aspect-auto min-h-0 animate-letter-enter-slot h-full`}
               >
                 {letter}
               </div>
@@ -188,8 +215,8 @@ export function GuessUnderlineInput({
               <div
                 className={`flex h-full w-full flex-col items-center justify-end ${
                   inDock ? "pb-1" : "pb-2"
-                } ${isMobile ? "cursor-text touch-manipulation" : ""}`}
-                onPointerDown={isMobile ? focusEmptySlot : undefined}
+                } ${emptySlotPointerClass} ${!isMobile ? "cursor-text" : ""}`}
+                onPointerDown={!isMobile ? () => focusGuessInput() : undefined}
               >
                 <div className="w-full flex-1" aria-hidden />
                 <div
@@ -266,7 +293,10 @@ export function MobileEnterButton({
 
 export function MobileLetterDock({ children }: { children: ReactNode }) {
   return (
-    <div className="shrink-0 border-t border-border-subtle/60 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden">
+    <div
+      data-mobile-game-dock
+      className="shrink-0 border-t border-border-subtle/60 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
+    >
       <div className="flex flex-col gap-2">{children}</div>
     </div>
   );
