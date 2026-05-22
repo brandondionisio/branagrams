@@ -306,7 +306,13 @@ export function Game() {
 
   return (
     <Layout>
-      <section className="px-4 pb-20 pt-10 sm:px-16">
+      <section
+        className={`px-4 sm:px-16 ${
+          phase === "playing"
+            ? "max-md:overflow-hidden max-md:py-0"
+            : "pb-20 pt-10"
+        }`}
+      >
         {phase === "setup" && (
           <>
             <p className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
@@ -411,8 +417,9 @@ export function Game() {
         )}
 
         {phase === "playing" && (
-          <div className="mx-auto max-w-2xl max-md:pb-(--mobile-dock-height,20rem)">
-            <div className="mb-8 flex items-end justify-between">
+          <div className="mx-auto flex w-full max-w-2xl flex-col max-md:h-[calc(100dvh-5rem)] max-md:max-h-[calc(100dvh-5rem)] max-md:overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mb-6 flex items-end justify-between max-md:mb-4">
               <div>
                 <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
                   <span className="font-mono uppercase tracking-[0.2em]">
@@ -464,7 +471,7 @@ export function Game() {
                 />
               )}
 
-              <div className="mt-5 mb-5 flex gap-3 flex-row items-baseline justify-between">
+              <div className="mt-4 mb-4 flex gap-3 flex-row items-baseline justify-between max-md:mt-3 max-md:mb-3">
                 <p className="flex flex-col sm:flex-row font-mono text-sm">
                   <div>
                     <span className="text-ink">{found.length}</span>
@@ -515,6 +522,28 @@ export function Game() {
               </div>
             </form>
 
+            {showHelp ? (
+              <AnswersByLengthSection
+                groupedAllByLength={groupedAllByLength}
+                foundSet={foundSet}
+                hintUnfound
+              />
+            ) : (
+              found.length > 0 && (
+                <div className="mb-4 flex flex-wrap gap-1.5">
+                  {found.map((w) => (
+                    <span
+                      key={w}
+                      className="rounded-md bg-success/10 px-2.5 py-1 font-mono text-sm text-success"
+                    >
+                      {w}
+                    </span>
+                  ))}
+                </div>
+              )
+            )}
+            </div>
+
             {isMobile && (
               <MobileLetterDock>
                 <MobileEnterButton
@@ -538,27 +567,6 @@ export function Game() {
                   onPick={pickTile}
                 />
               </MobileLetterDock>
-            )}
-
-            {showHelp ? (
-              <AnswersByLengthSection
-                groupedAllByLength={groupedAllByLength}
-                foundSet={foundSet}
-                hintUnfound
-              />
-            ) : (
-              found.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {found.map((w) => (
-                    <span
-                      key={w}
-                      className="rounded-md bg-success/10 px-2.5 py-1 font-mono text-sm text-success"
-                    >
-                      {w}
-                    </span>
-                  ))}
-                </div>
-              )
             )}
           </div>
         )}

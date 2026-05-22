@@ -31,6 +31,14 @@ html {
   min-height: 100dvh;
 }
 
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="search"],
+  textarea {
+    font-size: 16px;
+  }
+}
+
 body {
   font-family: "Rubik", system-ui, sans-serif;
   margin: 0;

@@ -1,7 +1,5 @@
 import {
-  useCallback,
   useEffect,
-  useRef,
   useState,
   type CSSProperties,
   type KeyboardEvent,
@@ -116,21 +114,7 @@ export function GuessUnderlineInput({
   const focusGuessInput = () => {
     const input = inputRef.current;
     if (!input) return;
-    if (isMobile) input.readOnly = false;
-    input.focus({ preventScroll: !isMobile });
-    if (isMobile) {
-      requestAnimationFrame(() => {
-        input
-          .closest("[data-mobile-dock]")
-          ?.scrollIntoView({ block: "end", behavior: "smooth" });
-      });
-    }
-  };
-
-  const blurGuessInput = () => {
-    const input = inputRef.current;
-    if (!input || !isMobile) return;
-    input.readOnly = true;
+    input.focus({ preventScroll: false });
   };
 
   const focusEmptySlot = (
@@ -166,11 +150,9 @@ export function GuessUnderlineInput({
         inputMode="text"
         enterKeyHint="go"
         value={guess}
-        readOnly={isMobile}
         tabIndex={0}
         onChange={() => {}}
         onKeyDown={onGuessKeyDown}
-        onBlur={blurGuessInput}
         onPaste={(e) => e.preventDefault()}
         aria-label="Type letters for your guess"
         autoComplete="off"
@@ -208,7 +190,6 @@ export function GuessUnderlineInput({
                   inDock ? "pb-1" : "pb-2"
                 } ${isMobile ? "cursor-text touch-manipulation" : ""}`}
                 onPointerDown={isMobile ? focusEmptySlot : undefined}
-                onClick={isMobile ? focusEmptySlot : undefined}
               >
                 <div className="w-full flex-1" aria-hidden />
                 <div
@@ -276,93 +257,17 @@ export function MobileEnterButton({
       type="button"
       disabled={disabled}
       onClick={onSubmit}
-      className="w-full rounded-2xl border border-border-subtle bg-page-bg-secondary py-8 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
+      className="w-full rounded-2xl border border-border-subtle bg-page-bg-secondary py-4 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
     >
       Enter
     </button>
   );
 }
 
-function useMobileKeyboardInset(): number {
-  const [inset, setInset] = useState(0);
-
-  const update = useCallback(() => {
-    const vv = window.visualViewport;
-    if (!vv) {
-      setInset(0);
-      return;
-    }
-    setInset(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
-  }, []);
-
-  useEffect(() => {
-    update();
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    window.addEventListener("orientationchange", update);
-
-    const onFocusIn = (e: FocusEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        requestAnimationFrame(update);
-        setTimeout(update, 100);
-      }
-    };
-    const onFocusOut = () => {
-      requestAnimationFrame(update);
-      setTimeout(update, 100);
-    };
-    document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("focusout", onFocusOut);
-
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-      window.removeEventListener("orientationchange", update);
-      document.removeEventListener("focusin", onFocusIn);
-      document.removeEventListener("focusout", onFocusOut);
-    };
-  }, [update]);
-
-  return inset;
-}
-
 export function MobileLetterDock({ children }: { children: ReactNode }) {
-  const dockRef = useRef<HTMLDivElement>(null);
-  const keyboardInset = useMobileKeyboardInset();
-
-  useEffect(() => {
-    const el = dockRef.current;
-    if (!el) return;
-
-    const syncDockHeight = () => {
-      document.documentElement.style.setProperty(
-        "--mobile-dock-height",
-        `${el.offsetHeight}px`,
-      );
-    };
-
-    syncDockHeight();
-    const ro = new ResizeObserver(syncDockHeight);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
   return (
-    <div
-      ref={dockRef}
-      data-mobile-dock
-      className="fixed inset-x-0 z-20 border-t border-border-subtle/60 bg-page-bg/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm transition-[bottom] duration-200 ease-out md:hidden"
-      style={{ bottom: keyboardInset }}
-    >
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
-        {children}
-      </div>
+    <div className="shrink-0 border-t border-border-subtle/60 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden">
+      <div className="flex flex-col gap-2">{children}</div>
     </div>
   );
 }
