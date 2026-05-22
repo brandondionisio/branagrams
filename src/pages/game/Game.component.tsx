@@ -515,28 +515,34 @@ export function Game() {
               </div>
 
               {isMobile && (
-                <MobileLetterDock>
-                  <MobileEnterButton
-                    disabled={guess.trim().length === 0}
-                    onSubmit={() => formRef.current?.requestSubmit()}
-                  />
-                  <GuessUnderlineInput
-                    variant="dock"
-                    slotCount={letters.length}
-                    displayLetters={displayLetters}
-                    guess={guess}
-                    pickedIndices={pickedTileIndices}
-                    flash={flash}
-                    inputRef={inputRef}
-                    onReturn={returnFromSlot}
-                    onGuessKeyDown={handleGuessKeyDown}
-                  />
-                  <MobileLetterBank
-                    tiles={displayLetters}
-                    pickedIndices={pickedTileIndices}
-                    onPick={pickTile}
-                  />
-                </MobileLetterDock>
+                <MobileLetterDock
+                  keyboardBar={
+                    <>
+                      <MobileEnterButton
+                        disabled={guess.trim().length === 0}
+                        onSubmit={() => formRef.current?.requestSubmit()}
+                      />
+                      <GuessUnderlineInput
+                        variant="dock"
+                        slotCount={letters.length}
+                        displayLetters={displayLetters}
+                        guess={guess}
+                        pickedIndices={pickedTileIndices}
+                        flash={flash}
+                        inputRef={inputRef}
+                        onReturn={returnFromSlot}
+                        onGuessKeyDown={handleGuessKeyDown}
+                      />
+                    </>
+                  }
+                  tileBank={
+                    <MobileLetterBank
+                      tiles={displayLetters}
+                      pickedIndices={pickedTileIndices}
+                      onPick={pickTile}
+                    />
+                  }
+                />
               )}
             </form>
 
