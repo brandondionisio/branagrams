@@ -27,6 +27,10 @@ html {
   scrollbar-gutter: stable;
 }
 
+#root {
+  min-height: 100dvh;
+}
+
 body {
   font-family: "Rubik", system-ui, sans-serif;
   margin: 0;

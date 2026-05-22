@@ -1,5 +1,7 @@
 import {
+  useCallback,
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
   type KeyboardEvent,
@@ -116,6 +118,13 @@ export function GuessUnderlineInput({
     if (!input) return;
     if (isMobile) input.readOnly = false;
     input.focus({ preventScroll: !isMobile });
+    if (isMobile) {
+      requestAnimationFrame(() => {
+        input
+          .closest("[data-mobile-dock]")
+          ?.scrollIntoView({ block: "end", behavior: "smooth" });
+      });
+    }
   };
 
   const blurGuessInput = () => {
@@ -274,10 +283,86 @@ export function MobileEnterButton({
   );
 }
 
+function useMobileKeyboardInset(): number {
+  const [inset, setInset] = useState(0);
+
+  const update = useCallback(() => {
+    const vv = window.visualViewport;
+    if (!vv) {
+      setInset(0);
+      return;
+    }
+    setInset(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
+  }, []);
+
+  useEffect(() => {
+    update();
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    window.addEventListener("orientationchange", update);
+
+    const onFocusIn = (e: FocusEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        requestAnimationFrame(update);
+        setTimeout(update, 100);
+      }
+    };
+    const onFocusOut = () => {
+      requestAnimationFrame(update);
+      setTimeout(update, 100);
+    };
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+      window.removeEventListener("orientationchange", update);
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
+  }, [update]);
+
+  return inset;
+}
+
 export function MobileLetterDock({ children }: { children: ReactNode }) {
+  const dockRef = useRef<HTMLDivElement>(null);
+  const keyboardInset = useMobileKeyboardInset();
+
+  useEffect(() => {
+    const el = dockRef.current;
+    if (!el) return;
+
+    const syncDockHeight = () => {
+      document.documentElement.style.setProperty(
+        "--mobile-dock-height",
+        `${el.offsetHeight}px`,
+      );
+    };
+
+    syncDockHeight();
+    const ro = new ResizeObserver(syncDockHeight);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    <div className="mt-4 border-t border-border-subtle/60 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">{children}</div>
+    <div
+      ref={dockRef}
+      data-mobile-dock
+      className="fixed inset-x-0 z-20 border-t border-border-subtle/60 bg-page-bg/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm transition-[bottom] duration-200 ease-out md:hidden"
+      style={{ bottom: keyboardInset }}
+    >
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
+        {children}
+      </div>
     </div>
   );
 }
