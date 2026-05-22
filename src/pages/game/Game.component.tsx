@@ -411,7 +411,7 @@ export function Game() {
         )}
 
         {phase === "playing" && (
-          <div className="mx-auto max-w-2xl max-md:pb-88">
+          <div className="mx-auto max-w-2xl">
             <div className="mb-8 flex items-end justify-between">
               <div>
                 <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
@@ -515,34 +515,28 @@ export function Game() {
               </div>
 
               {isMobile && (
-                <MobileLetterDock
-                  keyboardBar={
-                    <>
-                      <MobileEnterButton
-                        disabled={guess.trim().length === 0}
-                        onSubmit={() => formRef.current?.requestSubmit()}
-                      />
-                      <GuessUnderlineInput
-                        variant="dock"
-                        slotCount={letters.length}
-                        displayLetters={displayLetters}
-                        guess={guess}
-                        pickedIndices={pickedTileIndices}
-                        flash={flash}
-                        inputRef={inputRef}
-                        onReturn={returnFromSlot}
-                        onGuessKeyDown={handleGuessKeyDown}
-                      />
-                    </>
-                  }
-                  tileBank={
-                    <MobileLetterBank
-                      tiles={displayLetters}
-                      pickedIndices={pickedTileIndices}
-                      onPick={pickTile}
-                    />
-                  }
-                />
+                <MobileLetterDock>
+                  <MobileEnterButton
+                    disabled={guess.trim().length === 0}
+                    onSubmit={() => formRef.current?.requestSubmit()}
+                  />
+                  <GuessUnderlineInput
+                    variant="dock"
+                    slotCount={letters.length}
+                    displayLetters={displayLetters}
+                    guess={guess}
+                    pickedIndices={pickedTileIndices}
+                    flash={flash}
+                    inputRef={inputRef}
+                    onReturn={returnFromSlot}
+                    onGuessKeyDown={handleGuessKeyDown}
+                  />
+                  <MobileLetterBank
+                    tiles={displayLetters}
+                    pickedIndices={pickedTileIndices}
+                    onPick={pickTile}
+                  />
+                </MobileLetterDock>
               )}
             </form>
 

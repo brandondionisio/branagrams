@@ -1,7 +1,5 @@
 import {
-  useCallback,
   useEffect,
-  useRef,
   useState,
   type CSSProperties,
   type KeyboardEvent,
@@ -76,66 +74,6 @@ export function useMaxMd(): boolean {
   return maxMd;
 }
 
-export function useKeyboardInset(): number {
-  const [inset, setInset] = useState(0);
-
-  const update = useCallback(() => {
-    const vv = window.visualViewport;
-    if (!vv) {
-      setInset(0);
-      return;
-    }
-    setInset(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
-  }, []);
-
-  useEffect(() => {
-    update();
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", update);
-
-    const scheduleUpdate = () => {
-      requestAnimationFrame(update);
-      setTimeout(update, 50);
-      setTimeout(update, 150);
-    };
-
-    const onFocusIn = (e: FocusEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        scheduleUpdate();
-      }
-    };
-    const onFocusOut = (e: FocusEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        scheduleUpdate();
-      }
-    };
-    document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("focusout", onFocusOut);
-
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
-      document.removeEventListener("focusin", onFocusIn);
-      document.removeEventListener("focusout", onFocusOut);
-    };
-  }, [update]);
-
-  return inset;
-}
-
 function tileGridStyle(count: number): CSSProperties {
   return {
     gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))`,
@@ -177,7 +115,7 @@ export function GuessUnderlineInput({
     const input = inputRef.current;
     if (!input) return;
     if (isMobile) input.readOnly = false;
-    input.focus({ preventScroll: true });
+    input.focus({ preventScroll: !isMobile });
   };
 
   const blurGuessInput = () => {
@@ -199,7 +137,7 @@ export function GuessUnderlineInput({
     <div
       role="group"
       aria-label="Enter your guess"
-      className={`relative grid gap-2 rounded-2xl transition-colors ${
+      className={`relative grid gap-1 rounded-2xl transition-colors ${
         inDock ? "px-0 py-2" : "mb-4 px-2 py-4"
       } ${isMobile && !inDock ? "" : !isMobile ? "cursor-text" : ""} ${
         flash === "ok"
@@ -291,7 +229,7 @@ export function MobileLetterBank({
   const count = tiles.length;
 
   return (
-    <div className="grid gap-2" style={tileGridStyle(count)}>
+    <div className="grid gap-1" style={tileGridStyle(count)}>
       {tiles.split("").map((letter, index) => {
         const used = picked.has(index);
         if (used) {
@@ -336,48 +274,11 @@ export function MobileEnterButton({
   );
 }
 
-export function MobileLetterDock({
-  keyboardBar,
-  tileBank,
-}: {
-  keyboardBar: ReactNode;
-  tileBank: ReactNode;
-}) {
-  const keyboardInset = useKeyboardInset();
-  const tileBankRef = useRef<HTMLDivElement>(null);
-  const [tileBankHeight, setTileBankHeight] = useState(0);
-
-  useEffect(() => {
-    const el = tileBankRef.current;
-    if (!el) return;
-
-    const measure = () => setTileBankHeight(el.offsetHeight);
-    measure();
-
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const keyboardBarBottom = Math.max(keyboardInset, tileBankHeight);
-
+export function MobileLetterDock({ children }: { children: ReactNode }) {
   return (
-    <>
-      <div
-        className="fixed inset-x-0 z-30 border-t border-border-subtle/60 bg-page-bg/95 px-0.5 pt-3 pb-2 backdrop-blur-sm transition-[bottom] duration-200 ease-out md:hidden"
-        style={{ bottom: keyboardBarBottom }}
-      >
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
-          {keyboardBar}
-        </div>
-      </div>
-      <div
-        ref={tileBankRef}
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-border-subtle/60 bg-page-bg/95 px-0.5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm md:hidden"
-      >
-        <div className="mx-auto w-full max-w-2xl">{tileBank}</div>
-      </div>
-    </>
+    <div className="mt-4 border-t border-border-subtle/60 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">{children}</div>
+    </div>
   );
 }
 
