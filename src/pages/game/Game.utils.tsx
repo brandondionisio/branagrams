@@ -156,7 +156,7 @@ export function GuessUnderlineInput({
           isMobile
             ? `pointer-events-auto ${
                 inputFocused
-                  ? "z-20 bg-page-bg-secondary/95 text-center font-display text-3xl uppercase tracking-[0.2em] text-ink caret-ink"
+                  ? "z-10 flex items-center justify-center text-center font-display text-3xl uppercase tracking-[0.2em] text-ink caret-ink"
                   : "z-1 text-base opacity-0"
               }`
             : "z-0 cursor-text text-base opacity-0 pointer-events-none"
@@ -173,7 +173,7 @@ export function GuessUnderlineInput({
             key={slotIndex}
             className={`${slotCellClass}${
               isMobile && !letter ? " pointer-events-none" : ""
-            }`}
+            }${isMobile && inputFocused ? " invisible" : ""}`}
           >
             {letter ? (
               <div
