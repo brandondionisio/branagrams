@@ -411,7 +411,7 @@ export function Game() {
         )}
 
         {phase === "playing" && (
-          <div className="mx-auto max-w-2xl max-md:pb-44">
+          <div className="mx-auto max-w-2xl max-md:pb-88">
             <div className="mb-8 flex items-end justify-between">
               <div>
                 <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
@@ -451,79 +451,94 @@ export function Game() {
             </div>
 
             <form ref={formRef} onSubmit={submit}>
-              <GuessUnderlineInput
-                slotCount={letters.length}
-                displayLetters={displayLetters}
-                guess={guess}
-                pickedIndices={pickedTileIndices}
-                flash={flash}
-                inputRef={inputRef}
-                onReturn={returnFromSlot}
-                onGuessKeyDown={handleGuessKeyDown}
-              />
-            </form>
-
-            <div className="mt-5 mb-5 flex gap-3 flex-row items-baseline justify-between">
-              <p className="flex flex-col gap-3 sm:flex-row font-mono text-sm">
-                <div>
-                  <span className="text-ink">{found.length}</span>
-                  <span className="text-text-secondary">
-                    {" "}
-                    / {answers.size} found
-                  </span>
-                </div>
-                <div>
-                  <span
-                    className={`tabular-nums transition-colors duration-200 ${
-                      flash === "ok" || pointsAnimating
-                        ? "text-success"
-                        : flash === "bad"
-                          ? "text-destructive"
-                          : "text-text-secondary"
-                    }`}
-                  >
-                    <span className="mx-3 hidden sm:inline" aria-hidden>
-                      ·
-                    </span>
-                    {displayedPoints.toLocaleString()} pts
-                  </span>
-                </div>
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-0">
-                <label className="inline-flex w-fit cursor-pointer items-center gap-2 font-mono text-sm text-text-secondary select-none">
-                  <input
-                    type="checkbox"
-                    checked={showHelp}
-                    onChange={(e) => setShowHelp(e.target.checked)}
-                    className="size-4 shrink-0 rounded border-border-subtle accent-ink"
-                  />
-                  help
-                </label>
-                <span
-                  className="hidden h-8 w-px shrink-0 bg-border-subtle sm:mx-4 sm:block"
-                  aria-hidden
+              {!isMobile && (
+                <GuessUnderlineInput
+                  slotCount={letters.length}
+                  displayLetters={displayLetters}
+                  guess={guess}
+                  pickedIndices={pickedTileIndices}
+                  flash={flash}
+                  inputRef={inputRef}
+                  onReturn={returnFromSlot}
+                  onGuessKeyDown={handleGuessKeyDown}
                 />
-                <button
-                  type="button"
-                  onClick={() => setPhase("ended")}
-                  className="w-fit font-mono text-sm text-text-secondary underline decoration-border-subtle underline-offset-4 transition hover:text-ink hover:decoration-ink/40"
-                >
-                  give up
-                </button>
-              </div>
-            </div>
+              )}
 
-            <MobileLetterDock>
-              <MobileEnterButton
-                disabled={guess.trim().length === 0}
-                onSubmit={() => formRef.current?.requestSubmit()}
-              />
-              <MobileLetterBank
-                tiles={displayLetters}
-                pickedIndices={pickedTileIndices}
-                onPick={pickTile}
-              />
-            </MobileLetterDock>
+              <div className="mt-5 mb-5 flex gap-3 flex-row items-baseline justify-between">
+                <p className="flex flex-col sm:flex-row font-mono text-sm">
+                  <div>
+                    <span className="text-ink">{found.length}</span>
+                    <span className="text-text-secondary">
+                      {" "}
+                      / {answers.size} found
+                    </span>
+                  </div>
+                  <div>
+                    <span
+                      className={`tabular-nums transition-colors duration-200 ${
+                        flash === "ok" || pointsAnimating
+                          ? "text-success"
+                          : flash === "bad"
+                            ? "text-destructive"
+                            : "text-text-secondary"
+                      }`}
+                    >
+                      <span className="mx-3 hidden sm:inline" aria-hidden>
+                        ·
+                      </span>
+                      {displayedPoints.toLocaleString()} pts
+                    </span>
+                  </div>
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-0">
+                  <label className="inline-flex w-fit cursor-pointer items-center gap-2 font-mono text-sm text-text-secondary select-none">
+                    <input
+                      type="checkbox"
+                      checked={showHelp}
+                      onChange={(e) => setShowHelp(e.target.checked)}
+                      className="size-4 shrink-0 rounded border-border-subtle accent-ink"
+                    />
+                    help
+                  </label>
+                  <span
+                    className="hidden h-8 w-px shrink-0 bg-border-subtle sm:mx-4 sm:block"
+                    aria-hidden
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setPhase("ended")}
+                    className="w-fit font-mono text-sm text-text-secondary underline decoration-border-subtle underline-offset-4 transition hover:text-ink hover:decoration-ink/40"
+                  >
+                    give up
+                  </button>
+                </div>
+              </div>
+
+              {isMobile && (
+                <MobileLetterDock>
+                  <MobileEnterButton
+                    disabled={guess.trim().length === 0}
+                    onSubmit={() => formRef.current?.requestSubmit()}
+                  />
+                  <GuessUnderlineInput
+                    variant="dock"
+                    slotCount={letters.length}
+                    displayLetters={displayLetters}
+                    guess={guess}
+                    pickedIndices={pickedTileIndices}
+                    flash={flash}
+                    inputRef={inputRef}
+                    onReturn={returnFromSlot}
+                    onGuessKeyDown={handleGuessKeyDown}
+                  />
+                  <MobileLetterBank
+                    tiles={displayLetters}
+                    pickedIndices={pickedTileIndices}
+                    onPick={pickTile}
+                  />
+                </MobileLetterDock>
+              )}
+            </form>
 
             {showHelp ? (
               <AnswersByLengthSection

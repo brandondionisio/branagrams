@@ -3,6 +3,8 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -93,6 +95,7 @@ export function GuessUnderlineInput({
   inputRef,
   onReturn,
   onGuessKeyDown,
+  variant = "inline",
 }: {
   slotCount: number;
   displayLetters: string;
@@ -102,19 +105,39 @@ export function GuessUnderlineInput({
   inputRef: RefObject<HTMLInputElement | null>;
   onReturn: (slotIndex: number) => void;
   onGuessKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
+  variant?: "inline" | "dock";
 }) {
   const isMobile = useMaxMd();
+  const inDock = variant === "dock";
   const activeSlot = Math.min(guess.length, slotCount - 1);
 
-  const focusGuessInput = () => inputRef.current?.focus();
+  const focusGuessInput = () => {
+    const input = inputRef.current;
+    if (!input) return;
+    if (isMobile) input.readOnly = false;
+    input.focus({ preventScroll: true });
+  };
+
+  const blurGuessInput = () => {
+    const input = inputRef.current;
+    if (!input || !isMobile) return;
+    input.readOnly = true;
+  };
+
+  const focusEmptySlot = (
+    e: PointerEvent<HTMLElement> | MouseEvent<HTMLElement>,
+  ) => {
+    e.stopPropagation();
+    focusGuessInput();
+  };
 
   return (
     <div
       role="group"
       aria-label="Enter your guess"
-      className={`relative mb-4 grid gap-2 rounded-2xl px-2 py-4 transition-colors ${
-        isMobile ? "" : "cursor-text"
-      } ${
+      className={`relative grid gap-2 rounded-2xl px-2 transition-colors ${
+        inDock ? "py-2" : "mb-4 py-4"
+      } ${isMobile && !inDock ? "" : !isMobile ? "cursor-text" : ""} ${
         flash === "ok"
           ? "bg-success/15"
           : flash === "bad"
@@ -124,21 +147,25 @@ export function GuessUnderlineInput({
               : "bg-page-bg-tertiary/50"
       }`}
       style={tileGridStyle(slotCount)}
-      onPointerDown={isMobile ? undefined : focusGuessInput}
+      onPointerDown={!isMobile ? focusGuessInput : undefined}
     >
       <input
         ref={inputRef}
         type="text"
+        inputMode="text"
+        enterKeyHint="go"
         value={guess}
-        tabIndex={isMobile ? -1 : 0}
+        readOnly={isMobile}
+        tabIndex={0}
         onChange={() => {}}
         onKeyDown={onGuessKeyDown}
+        onBlur={blurGuessInput}
         onPaste={(e) => e.preventDefault()}
         aria-label="Type letters for your guess"
         autoComplete="off"
         autoCapitalize="off"
         spellCheck={false}
-        className={`absolute inset-0 z-0 h-full w-full opacity-0 ${
+        className={`absolute inset-0 z-0 h-full w-full text-base opacity-0 ${
           isMobile ? "pointer-events-none" : "cursor-text"
         }`}
       />
@@ -149,7 +176,12 @@ export function GuessUnderlineInput({
         const isActive = !letter && slotIndex === activeSlot;
 
         return (
-          <div key={slotIndex} className="relative z-10 aspect-square w-full">
+          <div
+            key={slotIndex}
+            className={`relative z-10 w-full ${
+              inDock ? "min-h-10" : "aspect-square"
+            }`}
+          >
             {letter ? (
               <div
                 role="button"
@@ -160,30 +192,25 @@ export function GuessUnderlineInput({
                   e.preventDefault();
                   onReturn(slotIndex);
                 }}
-                className={`${tileButtonClass} animate-letter-enter-slot h-full min-h-11`}
+                className={`${tileButtonClass} animate-letter-enter-slot h-full ${
+                  inDock ? "min-h-10" : "min-h-11"
+                }`}
               >
                 {letter}
               </div>
             ) : (
-              <div className="flex h-full min-h-11 w-full flex-col items-center justify-end pb-2">
+              <div
+                className={`flex h-full w-full flex-col items-center justify-end ${
+                  inDock ? "min-h-10 pb-1" : "min-h-11 pb-2"
+                } ${isMobile ? "cursor-text touch-manipulation" : ""}`}
+                onPointerDown={isMobile ? focusEmptySlot : undefined}
+                onClick={isMobile ? focusEmptySlot : undefined}
+              >
                 <div className="w-full flex-1" aria-hidden />
                 <div
-                  role={isMobile ? "button" : undefined}
-                  tabIndex={isMobile ? -1 : undefined}
-                  aria-label={
-                    isMobile ? "Type letters for your guess" : undefined
-                  }
-                  onPointerDown={
-                    isMobile
-                      ? (e) => {
-                          e.stopPropagation();
-                          focusGuessInput();
-                        }
-                      : undefined
-                  }
                   className={`h-0.5 w-[85%] shrink-0 rounded-full transition-colors ${
                     isActive ? "bg-ink" : "bg-border-subtle"
-                  } ${isMobile ? "cursor-text touch-manipulation" : ""}`}
+                  }`}
                 />
               </div>
             )}
@@ -245,7 +272,7 @@ export function MobileEnterButton({
       type="button"
       disabled={disabled}
       onClick={onSubmit}
-      className="mb-4 w-full rounded-2xl border border-border-subtle bg-page-bg-secondary py-4 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
+      className="w-full rounded-2xl border border-border-subtle bg-page-bg-secondary py-8 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
     >
       Enter
     </button>
@@ -254,8 +281,10 @@ export function MobileEnterButton({
 
 export function MobileLetterDock({ children }: { children: ReactNode }) {
   return (
-    <div className="fixed inset-x-0 bottom-3 z-20 bg-page-bg/95 px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm md:hidden">
-      <div className="mx-auto w-full max-w-2xl">{children}</div>
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border-subtle/60 bg-page-bg/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm md:hidden">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+        {children}
+      </div>
     </div>
   );
 }
