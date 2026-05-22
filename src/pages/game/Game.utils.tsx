@@ -108,10 +108,9 @@ export function GuessUnderlineInput({
   const isMobile = useMaxMd();
   const inDock = variant === "dock";
   const activeSlot = Math.min(guess.length, slotCount - 1);
+  const [inputFocused, setInputFocused] = useState(false);
 
   const slotCellClass = "relative z-10 aspect-square w-full";
-  const filledSlotClass = isMobile ? "pointer-events-auto" : "";
-  const emptySlotClass = isMobile ? "pointer-events-none" : "";
 
   return (
     <div
@@ -145,16 +144,22 @@ export function GuessUnderlineInput({
         value={guess}
         tabIndex={0}
         onChange={() => {}}
+        onFocus={() => isMobile && setInputFocused(true)}
+        onBlur={() => isMobile && setInputFocused(false)}
         onKeyDown={onGuessKeyDown}
         onPaste={(e) => e.preventDefault()}
         aria-label="Type letters for your guess"
         autoComplete="off"
         autoCapitalize="off"
         spellCheck={false}
-        className={`absolute inset-0 h-full w-full text-base opacity-0 ${
+        className={`absolute -inset-y-1 inset-x-0 min-h-full w-full touch-manipulation border-0 bg-transparent outline-none ${
           isMobile
-            ? "z-1 pointer-events-auto"
-            : "z-0 cursor-text pointer-events-none"
+            ? `pointer-events-auto ${
+                inputFocused
+                  ? "z-20 bg-page-bg-secondary/95 text-center font-display text-3xl uppercase tracking-[0.2em] text-ink caret-ink"
+                  : "z-1 text-base opacity-0"
+              }`
+            : "z-0 cursor-text text-base opacity-0 pointer-events-none"
         }`}
       />
       {Array.from({ length: slotCount }, (_, slotIndex) => {
@@ -164,7 +169,12 @@ export function GuessUnderlineInput({
         const isActive = !letter && slotIndex === activeSlot;
 
         return (
-          <div key={slotIndex} className={slotCellClass}>
+          <div
+            key={slotIndex}
+            className={`${slotCellClass}${
+              isMobile && !letter ? " pointer-events-none" : ""
+            }`}
+          >
             {letter ? (
               <div
                 role="button"
@@ -175,7 +185,7 @@ export function GuessUnderlineInput({
                   e.preventDefault();
                   onReturn(slotIndex);
                 }}
-                className={`${tileButtonClass} ${filledSlotClass} aspect-auto min-h-0 animate-letter-enter-slot h-full`}
+                className={`${tileButtonClass} aspect-auto min-h-0 animate-letter-enter-slot h-full`}
               >
                 {letter}
               </div>
@@ -183,7 +193,7 @@ export function GuessUnderlineInput({
               <div
                 className={`flex h-full w-full flex-col items-center justify-end ${
                   inDock ? "pb-1" : "pb-2"
-                } ${emptySlotClass} ${!isMobile ? "cursor-text" : ""}`}
+                } ${!isMobile ? "cursor-text" : ""}`}
                 onPointerDown={
                   !isMobile
                     ? () => inputRef.current?.focus({ preventScroll: true })
