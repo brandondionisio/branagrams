@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Layout } from "../../components/Layout";
@@ -54,6 +61,7 @@ export function Game() {
   const [flash, setFlash] = useState<"ok" | "bad" | "dup" | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const gameHudRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const guessRef = useRef("");
   const cancelPointsAnim = useRef<(() => void) | null>(null);
@@ -189,6 +197,35 @@ export function Game() {
   }, [phase, location.pathname, location.state, navigate]);
 
   useEffect(() => () => cancelPointsAnim.current?.(), []);
+
+  const scrollGameHudIntoView = useCallback(() => {
+    const hud = gameHudRef.current;
+    if (!hud) return;
+    const scroll = () => {
+      hud.scrollIntoView({
+        block: "start",
+        inline: "nearest",
+        behavior: "auto",
+      });
+    };
+    requestAnimationFrame(scroll);
+    setTimeout(scroll, 150);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile || phase !== "playing") return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const onViewportChange = () => {
+      if (document.activeElement === inputRef.current) {
+        scrollGameHudIntoView();
+      }
+    };
+
+    vv.addEventListener("resize", onViewportChange);
+    return () => vv.removeEventListener("resize", onViewportChange);
+  }, [isMobile, phase, scrollGameHudIntoView]);
 
   function foundPoints(words: string[]) {
     return words.reduce((s, w) => s + pointsForWordLength(w.length), 0);
@@ -416,7 +453,8 @@ export function Game() {
 
         {phase === "playing" && (
           <div className="mx-auto max-w-2xl max-md:pb-80">
-            <div className="mb-6 flex items-end justify-between max-md:mb-4">
+            <div ref={gameHudRef} className="max-md:scroll-mt-3">
+              <div className="mb-6 flex items-end justify-between max-md:mb-4">
                 <div>
                   <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
                     <span className="font-mono uppercase tracking-[0.2em]">
@@ -518,27 +556,28 @@ export function Game() {
                   </div>
                 </div>
               </form>
+            </div>
 
-              {showHelp ? (
-                <AnswersByLengthSection
-                  groupedAllByLength={groupedAllByLength}
-                  foundSet={foundSet}
-                  hintUnfound
-                />
-              ) : (
-                found.length > 0 && (
-                  <div className="mb-4 flex flex-wrap gap-1.5">
-                    {found.map((w) => (
-                      <span
-                        key={w}
-                        className="rounded-md bg-success/10 px-2.5 py-1 font-mono text-sm text-success"
-                      >
-                        {w}
-                      </span>
-                    ))}
-                  </div>
-                )
-              )}
+            {showHelp ? (
+              <AnswersByLengthSection
+                groupedAllByLength={groupedAllByLength}
+                foundSet={foundSet}
+                hintUnfound
+              />
+            ) : (
+              found.length > 0 && (
+                <div className="mb-4 flex flex-wrap gap-1.5">
+                  {found.map((w) => (
+                    <span
+                      key={w}
+                      className="rounded-md bg-success/10 px-2.5 py-1 font-mono text-sm text-success"
+                    >
+                      {w}
+                    </span>
+                  ))}
+                </div>
+              )
+            )}
 
             {isMobile && (
               <MobileLetterDock>
@@ -556,6 +595,7 @@ export function Game() {
                   inputRef={inputRef}
                   onReturn={returnFromSlot}
                   onGuessKeyDown={handleGuessKeyDown}
+                  onKeyboardOpen={scrollGameHudIntoView}
                 />
                 <MobileLetterBank
                   tiles={displayLetters}

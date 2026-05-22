@@ -93,6 +93,7 @@ export function GuessUnderlineInput({
   inputRef,
   onReturn,
   onGuessKeyDown,
+  onKeyboardOpen,
   variant = "inline",
 }: {
   slotCount: number;
@@ -103,6 +104,7 @@ export function GuessUnderlineInput({
   inputRef: RefObject<HTMLInputElement | null>;
   onReturn: (slotIndex: number) => void;
   onGuessKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
+  onKeyboardOpen?: () => void;
   variant?: "inline" | "dock";
 }) {
   const isMobile = useMaxMd();
@@ -144,7 +146,11 @@ export function GuessUnderlineInput({
         value={guess}
         tabIndex={0}
         onChange={() => {}}
-        onFocus={() => isMobile && setInputFocused(true)}
+        onFocus={() => {
+          if (!isMobile) return;
+          setInputFocused(true);
+          onKeyboardOpen?.();
+        }}
         onBlur={() => isMobile && setInputFocused(false)}
         onKeyDown={onGuessKeyDown}
         onPaste={(e) => e.preventDefault()}
