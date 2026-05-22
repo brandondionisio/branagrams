@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Layout } from "../../components/Layout";
@@ -61,7 +54,6 @@ export function Game() {
   const [flash, setFlash] = useState<"ok" | "bad" | "dup" | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const gameHudRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const guessRef = useRef("");
   const cancelPointsAnim = useRef<(() => void) | null>(null);
@@ -197,35 +189,6 @@ export function Game() {
   }, [phase, location.pathname, location.state, navigate]);
 
   useEffect(() => () => cancelPointsAnim.current?.(), []);
-
-  const scrollGameHudIntoView = useCallback(() => {
-    const hud = gameHudRef.current;
-    if (!hud) return;
-    const scroll = () => {
-      hud.scrollIntoView({
-        block: "start",
-        inline: "nearest",
-        behavior: "auto",
-      });
-    };
-    requestAnimationFrame(scroll);
-    setTimeout(scroll, 150);
-  }, []);
-
-  useEffect(() => {
-    if (!isMobile || phase !== "playing") return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    const onViewportChange = () => {
-      if (document.activeElement === inputRef.current) {
-        scrollGameHudIntoView();
-      }
-    };
-
-    vv.addEventListener("resize", onViewportChange);
-    return () => vv.removeEventListener("resize", onViewportChange);
-  }, [isMobile, phase, scrollGameHudIntoView]);
 
   function foundPoints(words: string[]) {
     return words.reduce((s, w) => s + pointsForWordLength(w.length), 0);
@@ -453,110 +416,108 @@ export function Game() {
 
         {phase === "playing" && (
           <div className="mx-auto max-w-2xl max-md:pb-80">
-            <div ref={gameHudRef} className="max-md:scroll-mt-3">
-              <div className="mb-6 flex items-end justify-between max-md:mb-4">
-                <div>
-                  <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
-                    <span className="font-mono uppercase tracking-[0.2em]">
-                      your letters
-                    </span>
-                    {rankInfo && (
-                      <div className="text-sm">
-                        <span className="mx-3" aria-hidden>
-                          ·
-                        </span>
-                        <span>
-                          rank #{rankInfo.rank.toLocaleString()} of{" "}
-                          {rankInfo.total.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <p className="font-display text-5xl tracking-[0.15em] text-ink">
-                    {displayLetters.toUpperCase()}
-                  </p>
+            <div className="mb-6 flex items-end justify-between max-md:mb-4">
+              <div>
+                <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
+                  <span className="font-mono uppercase tracking-[0.2em]">
+                    your letters
+                  </span>
+                  {rankInfo && (
+                    <div className="text-sm">
+                      <span className="mx-3" aria-hidden>
+                        ·
+                      </span>
+                      <span>
+                        rank #{rankInfo.rank.toLocaleString()} of{" "}
+                        {rankInfo.total.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="text-right">
-                  <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
-                    time
-                  </p>
-                  <p
-                    className={`font-display text-5xl tabular-nums ${
-                      duration !== 0 && timeLeft <= 10
-                        ? "text-destructive"
-                        : "text-ink"
-                    }`}
+                <p className="font-display text-5xl tracking-[0.15em] text-ink">
+                  {displayLetters.toUpperCase()}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
+                  time
+                </p>
+                <p
+                  className={`font-display text-5xl tabular-nums ${
+                    duration !== 0 && timeLeft <= 10
+                      ? "text-destructive"
+                      : "text-ink"
+                  }`}
+                >
+                  {duration === 0 ? "∞" : timeLeft}
+                </p>
+              </div>
+            </div>
+
+            <form ref={formRef} onSubmit={submit}>
+              {!isMobile && (
+                <GuessUnderlineInput
+                  slotCount={letters.length}
+                  displayLetters={displayLetters}
+                  guess={guess}
+                  pickedIndices={pickedTileIndices}
+                  flash={flash}
+                  inputRef={inputRef}
+                  onReturn={returnFromSlot}
+                  onGuessKeyDown={handleGuessKeyDown}
+                />
+              )}
+
+              <div className="mt-4 mb-4 flex gap-3 flex-row items-baseline justify-between max-md:mt-3 max-md:mb-3">
+                <p className="flex flex-col sm:flex-row font-mono text-sm">
+                  <div>
+                    <span className="text-ink">{found.length}</span>
+                    <span className="text-text-secondary">
+                      {" "}
+                      / {answers.size} found
+                    </span>
+                  </div>
+                  <div>
+                    <span
+                      className={`tabular-nums transition-colors duration-200 ${
+                        flash === "ok" || pointsAnimating
+                          ? "text-success"
+                          : flash === "bad"
+                            ? "text-destructive"
+                            : "text-text-secondary"
+                      }`}
+                    >
+                      <span className="mx-3 hidden sm:inline" aria-hidden>
+                        ·
+                      </span>
+                      {displayedPoints.toLocaleString()} pts
+                    </span>
+                  </div>
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-0">
+                  <label className="inline-flex w-fit cursor-pointer items-center gap-2 font-mono text-sm text-text-secondary select-none">
+                    <input
+                      type="checkbox"
+                      checked={showHelp}
+                      onChange={(e) => setShowHelp(e.target.checked)}
+                      className="size-4 shrink-0 rounded border-border-subtle accent-ink"
+                    />
+                    help
+                  </label>
+                  <span
+                    className="hidden h-8 w-px shrink-0 bg-border-subtle sm:mx-4 sm:block"
+                    aria-hidden
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setPhase("ended")}
+                    className="w-fit font-mono text-sm text-text-secondary underline decoration-border-subtle underline-offset-4 transition hover:text-ink hover:decoration-ink/40"
                   >
-                    {duration === 0 ? "∞" : timeLeft}
-                  </p>
+                    give up
+                  </button>
                 </div>
               </div>
-
-              <form ref={formRef} onSubmit={submit}>
-                {!isMobile && (
-                  <GuessUnderlineInput
-                    slotCount={letters.length}
-                    displayLetters={displayLetters}
-                    guess={guess}
-                    pickedIndices={pickedTileIndices}
-                    flash={flash}
-                    inputRef={inputRef}
-                    onReturn={returnFromSlot}
-                    onGuessKeyDown={handleGuessKeyDown}
-                  />
-                )}
-
-                <div className="mt-4 mb-4 flex gap-3 flex-row items-baseline justify-between max-md:mt-3 max-md:mb-3">
-                  <p className="flex flex-col sm:flex-row font-mono text-sm">
-                    <div>
-                      <span className="text-ink">{found.length}</span>
-                      <span className="text-text-secondary">
-                        {" "}
-                        / {answers.size} found
-                      </span>
-                    </div>
-                    <div>
-                      <span
-                        className={`tabular-nums transition-colors duration-200 ${
-                          flash === "ok" || pointsAnimating
-                            ? "text-success"
-                            : flash === "bad"
-                              ? "text-destructive"
-                              : "text-text-secondary"
-                        }`}
-                      >
-                        <span className="mx-3 hidden sm:inline" aria-hidden>
-                          ·
-                        </span>
-                        {displayedPoints.toLocaleString()} pts
-                      </span>
-                    </div>
-                  </p>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-0">
-                    <label className="inline-flex w-fit cursor-pointer items-center gap-2 font-mono text-sm text-text-secondary select-none">
-                      <input
-                        type="checkbox"
-                        checked={showHelp}
-                        onChange={(e) => setShowHelp(e.target.checked)}
-                        className="size-4 shrink-0 rounded border-border-subtle accent-ink"
-                      />
-                      help
-                    </label>
-                    <span
-                      className="hidden h-8 w-px shrink-0 bg-border-subtle sm:mx-4 sm:block"
-                      aria-hidden
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setPhase("ended")}
-                      className="w-fit font-mono text-sm text-text-secondary underline decoration-border-subtle underline-offset-4 transition hover:text-ink hover:decoration-ink/40"
-                    >
-                      give up
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
+            </form>
 
             {showHelp ? (
               <AnswersByLengthSection
@@ -595,7 +556,6 @@ export function Game() {
                   inputRef={inputRef}
                   onReturn={returnFromSlot}
                   onGuessKeyDown={handleGuessKeyDown}
-                  onKeyboardOpen={scrollGameHudIntoView}
                 />
                 <MobileLetterBank
                   tiles={displayLetters}
