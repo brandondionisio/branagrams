@@ -109,46 +109,9 @@ export function GuessUnderlineInput({
   const inDock = variant === "dock";
   const activeSlot = Math.min(guess.length, slotCount - 1);
 
-  const focusGuessInput = () => {
-    const input = inputRef.current;
-    if (!input) return;
-    input.focus({ preventScroll: false });
-  };
-
-  const scrollDockIntoView = () => {
-    if (!isMobile || !inDock) return;
-    requestAnimationFrame(() => {
-      inputRef.current
-        ?.closest("[data-mobile-game-dock]")
-        ?.scrollIntoView({ block: "end", behavior: "auto" });
-    });
-  };
-
-  useEffect(() => {
-    if (!isMobile || !inDock) return;
-    const input = inputRef.current;
-    const vv = window.visualViewport;
-    if (!input || !vv) return;
-
-    const onViewportChange = () => {
-      if (document.activeElement !== input) return;
-      scrollDockIntoView();
-    };
-
-    input.addEventListener("focus", scrollDockIntoView);
-    vv.addEventListener("resize", onViewportChange);
-    vv.addEventListener("scroll", onViewportChange);
-    return () => {
-      input.removeEventListener("focus", scrollDockIntoView);
-      vv.removeEventListener("resize", onViewportChange);
-      vv.removeEventListener("scroll", onViewportChange);
-    };
-  }, [isMobile, inDock, inputRef]);
-
   const slotCellClass = "relative z-10 aspect-square w-full";
-
-  const slotPointerClass = isMobile ? "pointer-events-auto" : "";
-  const emptySlotPointerClass = isMobile ? "pointer-events-none" : "";
+  const filledSlotClass = isMobile ? "pointer-events-auto" : "";
+  const emptySlotClass = isMobile ? "pointer-events-none" : "";
 
   return (
     <div
@@ -166,7 +129,13 @@ export function GuessUnderlineInput({
               : "bg-page-bg-tertiary/50"
       }`}
       style={tileGridStyle(slotCount)}
-      onPointerDown={!isMobile ? focusGuessInput : undefined}
+      onPointerDown={
+        !isMobile
+          ? () => {
+              inputRef.current?.focus({ preventScroll: true });
+            }
+          : undefined
+      }
     >
       <input
         ref={inputRef}
@@ -182,10 +151,9 @@ export function GuessUnderlineInput({
         autoComplete="off"
         autoCapitalize="off"
         spellCheck={false}
-        onFocus={scrollDockIntoView}
-        className={`absolute inset-0 h-full w-full text-base caret-transparent text-transparent opacity-0 ${
+        className={`absolute inset-0 h-full w-full text-base opacity-0 ${
           isMobile
-            ? "z-[1] pointer-events-auto"
+            ? "z-1 pointer-events-auto"
             : "z-0 cursor-text pointer-events-none"
         }`}
       />
@@ -207,7 +175,7 @@ export function GuessUnderlineInput({
                   e.preventDefault();
                   onReturn(slotIndex);
                 }}
-                className={`${tileButtonClass} ${slotPointerClass} aspect-auto min-h-0 animate-letter-enter-slot h-full`}
+                className={`${tileButtonClass} ${filledSlotClass} aspect-auto min-h-0 animate-letter-enter-slot h-full`}
               >
                 {letter}
               </div>
@@ -215,8 +183,12 @@ export function GuessUnderlineInput({
               <div
                 className={`flex h-full w-full flex-col items-center justify-end ${
                   inDock ? "pb-1" : "pb-2"
-                } ${emptySlotPointerClass} ${!isMobile ? "cursor-text" : ""}`}
-                onPointerDown={!isMobile ? () => focusGuessInput() : undefined}
+                } ${emptySlotClass} ${!isMobile ? "cursor-text" : ""}`}
+                onPointerDown={
+                  !isMobile
+                    ? () => inputRef.current?.focus({ preventScroll: true })
+                    : undefined
+                }
               >
                 <div className="w-full flex-1" aria-hidden />
                 <div
@@ -293,11 +265,10 @@ export function MobileEnterButton({
 
 export function MobileLetterDock({ children }: { children: ReactNode }) {
   return (
-    <div
-      data-mobile-game-dock
-      className="shrink-0 border-t border-border-subtle/60 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
-    >
-      <div className="flex flex-col gap-2">{children}</div>
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border-subtle/60 bg-page-bg/95 px-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm md:hidden">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
+        {children}
+      </div>
     </div>
   );
 }

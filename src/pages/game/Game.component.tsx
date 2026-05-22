@@ -415,9 +415,8 @@ export function Game() {
         )}
 
         {phase === "playing" && (
-          <div className="mx-auto flex w-full max-w-2xl flex-col max-md:min-h-[calc(100dvh-5rem)]">
-            <div className="min-h-0 flex-1 max-md:overflow-y-auto">
-              <div className="mb-6 flex items-end justify-between max-md:mb-4">
+          <div className="mx-auto max-w-2xl max-md:pb-80">
+            <div className="mb-6 flex items-end justify-between max-md:mb-4">
                 <div>
                   <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
                     <span className="font-mono uppercase tracking-[0.2em]">
@@ -540,7 +539,6 @@ export function Game() {
                   </div>
                 )
               )}
-            </div>
 
             {isMobile && (
               <MobileLetterDock>
