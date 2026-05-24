@@ -91,7 +91,16 @@ export function Game() {
   function handleGuessKeyDown(e: ReactKeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       e.preventDefault();
+      if (e.shiftKey) {
+        setPhase("ended");
+        return;
+      }
       if (guess.trim()) formRef.current?.requestSubmit();
+      return;
+    }
+    if (e.shiftKey && (e.key === "h" || e.key === "H")) {
+      e.preventDefault();
+      setShowHelp((v) => !v);
       return;
     }
     if (e.key === "Backspace") {
@@ -144,6 +153,18 @@ export function Game() {
         }
       }
 
+      if (e.shiftKey && e.key === "Enter") {
+        e.preventDefault();
+        setPhase("ended");
+        return;
+      }
+
+      if (e.shiftKey && (e.key === "h" || e.key === "H")) {
+        e.preventDefault();
+        setShowHelp((v) => !v);
+        return;
+      }
+
       if (e.key === "Enter") {
         if (guessRef.current.trim()) {
           e.preventDefault();
@@ -175,6 +196,60 @@ export function Game() {
   }, [phase, displayLetters, pickedTileIndices, isMobile]);
 
   useEffect(() => {
+    if (phase !== "ended") return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      if (e.shiftKey) {
+        setPhase("setup");
+      } else {
+        start();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [phase, source, randomLen, customLetters, minLen, duration, isMobile]);
+
+  useEffect(() => {
+    if (phase !== "setup") return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key !== "Enter" || e.shiftKey) return;
+
+      const target = e.target;
+      if (target instanceof HTMLTextAreaElement) return;
+      if (
+        target instanceof HTMLInputElement &&
+        (target.type === "text" ||
+          target.type === "search" ||
+          target.type === "url" ||
+          target.type === "email" ||
+          target.type === "password")
+      ) {
+        return;
+      }
+
+      if (!ready) return;
+      if (
+        source === "custom" &&
+        customLetters.replace(/[^a-zA-Z]/g, "").length < 3
+      ) {
+        return;
+      }
+
+      e.preventDefault();
+      start();
+    };
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [phase, ready, source, customLetters, randomLen, minLen, duration, isMobile]);
+
+  useEffect(() => {
     if (phase !== "setup") return;
     const raw = (location.state as Record<string, unknown> | null)?.[
       GAME_PREFILL_CUSTOM_LETTERS_KEY
@@ -185,6 +260,7 @@ export function Game() {
       setSource("custom");
       setCustomLetters(cleaned);
     }
+    
     navigate(location.pathname, { replace: true, state: {} });
   }, [phase, location.pathname, location.state, navigate]);
 

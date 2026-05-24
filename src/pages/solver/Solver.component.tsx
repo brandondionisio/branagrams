@@ -42,6 +42,31 @@ export function Solver() {
     }
   }, [ready, deferredInput]);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      if (results.length === 0) return;
+
+      const target = e.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      e.preventDefault();
+      const ids = SOLVER_RESULTS_VIEWS.map((v) => v.id);
+      const idx = ids.indexOf(resultsView);
+      const delta = e.key === "ArrowRight" ? 1 : -1;
+      setResultsView(ids[(idx + delta + ids.length) % ids.length]);
+    };
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [results.length, resultsView]);
+
   const groupedByLength = useMemo(() => {
     const m = new Map<number, string[]>();
     for (const w of results) {
