@@ -202,11 +202,7 @@ export function Game() {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key !== "Enter") return;
       e.preventDefault();
-      if (e.shiftKey) {
-        setPhase("setup");
-      } else {
-        start();
-      }
+      if (e.shiftKey) start();
     };
 
     window.addEventListener("keydown", onKeyDown, true);
@@ -247,7 +243,16 @@ export function Game() {
 
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [phase, ready, source, customLetters, randomLen, minLen, duration, isMobile]);
+  }, [
+    phase,
+    ready,
+    source,
+    customLetters,
+    randomLen,
+    minLen,
+    duration,
+    isMobile,
+  ]);
 
   useEffect(() => {
     if (phase !== "setup") return;
@@ -260,7 +265,7 @@ export function Game() {
       setSource("custom");
       setCustomLetters(cleaned);
     }
-    
+
     navigate(location.pathname, { replace: true, state: {} });
   }, [phase, location.pathname, location.state, navigate]);
 
@@ -689,12 +694,14 @@ export function Game() {
 
               <div className="flex flex-wrap gap-3">
                 <button
+                  type="button"
                   onClick={() => setPhase("setup")}
                   className="rounded-full bg-ink px-6 py-3 text-sm font-medium text-page-bg transition hover:opacity-90"
                 >
                   New game
                 </button>
                 <button
+                  type="button"
                   onClick={start}
                   className="rounded-full border border-border-subtle bg-page-bg-secondary px-6 py-3 text-sm font-medium text-ink transition hover:border-ink/40"
                 >
