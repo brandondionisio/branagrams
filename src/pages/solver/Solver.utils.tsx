@@ -5,16 +5,17 @@ import {
   letterMultisetKey,
 } from "../../lib/utils/anagramGroups";
 import { pointsForWordLength } from "../game/Game.utils";
-import { GAME_PREFILL_CUSTOM_LETTERS_KEY } from "./Solver.config";
+import {
+  GAME_PREFILL_CUSTOM_LETTERS_KEY,
+  solverPathForLetters,
+} from "./Solver.config";
 
 export function SolverWordChip({
   word,
   fill,
-  onUseInSolver,
 }: {
   word: string;
   fill: string;
-  onUseInSolver: (w: string) => void;
 }) {
   const navigate = useNavigate();
 
@@ -36,7 +37,7 @@ export function SolverWordChip({
             type="button"
             role="menuitem"
             className="block w-full px-3 py-2 text-left font-mono text-xs text-ink transition first:rounded-t-md last:rounded-b-md hover:bg-page-bg-tertiary"
-            onClick={() => onUseInSolver(word)}
+            onClick={() => navigate(solverPathForLetters(word))}
           >
             Solver
           </button>

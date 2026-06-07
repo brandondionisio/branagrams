@@ -1,10 +1,3 @@
-#!/usr/bin/env node
-// Pre-compute the top-N highest-scoring anagram base words for each length
-// 2..10 and write them to src/lib/top-words.json. Run with:
-//   node scripts/build-top-words.mjs
-// or:
-//   npm run build:words
-
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,14 +5,12 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const DICT_PATH = resolve(ROOT, "public/dictionary.txt");
-const OUT_PATH = resolve(ROOT, "src/lib/top-words.json");
+const OUT_PATH = resolve(ROOT, "src/lib/data/topWords.json");
 
 const TOP_POOL_SIZE = 200;
 const MIN_LENGTH = 2;
 const MAX_LENGTH = 10;
 
-// Points awarded for finding a sub-anagram of the given length.
-// Mirrors src/lib/anagrams.ts → keep in sync.
 function pointsForLength(len) {
   if (len < 3) return 0;
   switch (len) {
@@ -42,7 +33,6 @@ function signatureOf(w) {
   return w.split("").sort().join("");
 }
 
-// All distinct sub-multisets of a sorted signature, returned as sorted strings.
 function subSignatures(sig) {
   const seen = new Set();
   const stack = [[0, ""]];
@@ -67,7 +57,6 @@ function main() {
     .filter((w) => w.length >= 2 && /^[a-z]+$/.test(w));
   console.log(`  ${words.length.toLocaleString()} dictionary entries`);
 
-  // signature → list of words sharing that signature.
   const sigToWords = new Map();
   for (const w of words) {
     const sig = signatureOf(w);
@@ -94,12 +83,25 @@ function main() {
     return total;
   }
 
-  /** @type {Record<string, { count: number; top: string[] }>} */
+  const sigRankScore = new Map();
+  function rankScoreOfSignature(sig) {
+    const cached = sigRankScore.get(sig);
+    if (cached !== undefined) return cached;
+    const minLen = Math.max(3, sig.length - 1);
+    let total = 0;
+    for (const sub of subSignatures(sig)) {
+      if (sub.length < minLen) continue;
+      const ws = sigToWords.get(sub);
+      if (!ws) continue;
+      total += ws.length * pointsForLength(sub.length);
+    }
+    sigRankScore.set(sig, total);
+    return total;
+  }
+
+  /** @type {Record<string, { count: number; top: string[]; rankTop: string[] }>} */
   const result = {};
   for (let len = MIN_LENGTH; len <= MAX_LENGTH; len++) {
-    // Pick the alphabetically smallest representative per signature so that
-    // anagram-equivalent words like "paters" and "prates" don't both occupy
-    // slots in the top pool.
     const reps = new Map();
     for (const w of words) {
       if (w.length !== len) continue;
@@ -108,12 +110,16 @@ function main() {
       if (!existing || w < existing) reps.set(sig, w);
     }
     const scored = [];
+    const rankScored = [];
     for (const [sig, w] of reps) {
       scored.push([w, scoreOfSignature(sig)]);
+      rankScored.push([w, rankScoreOfSignature(sig)]);
     }
     scored.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    rankScored.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
     const top = scored.slice(0, TOP_POOL_SIZE).map(([w]) => w);
-    result[len] = { count: reps.size, top };
+    const rankTop = rankScored.slice(0, TOP_POOL_SIZE).map(([w]) => w);
+    result[len] = { count: reps.size, top, rankTop };
     console.log(
       `  length ${len}: ${reps.size.toLocaleString()} signatures → top ${top.length}`,
     );

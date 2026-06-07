@@ -60,6 +60,16 @@ function Header({ variant }: { variant: "home" | "page" }) {
           >
             Game
           </NavLink>
+          <NavLink
+            to="/rank"
+            className={({ isActive }) =>
+              isActive
+                ? "font-medium text-ink underline underline-offset-4"
+                : "text-text-secondary transition hover:text-ink"
+            }
+          >
+            Rank
+          </NavLink>
         </nav>
       )}
     </header>

@@ -4,6 +4,7 @@ import topWordsJson from "../data/topWords.json";
 interface PrecomputedEntry {
   count: number;
   top: string[];
+  rankTop: string[];
 }
 
 const PRECOMPUTED_TOP: Record<string, PrecomputedEntry> = topWordsJson;
@@ -20,6 +21,7 @@ let DICT: Set<string> = new Set();
 let WORD_COUNTS: Int8Array[] = [];
 let SIG_TO_WORDS: Map<string, string[]> = new Map();
 const SIG_SCORE = new Map<string, number>();
+const SIG_RANK_SCORE = new Map<string, number>();
 const TOP_BY_LENGTH = new Map<number, string[]>();
 let loaded = false;
 let loadPromise: Promise<void> | null = null;
@@ -160,13 +162,13 @@ function pointsForLength(len: number): number {
     case 4:
       return 400;
     case 5:
-      return 800;
-    case 6:
       return 1200;
-    case 7:
+    case 6:
       return 2000;
+    case 7:
+      return 3000;
     default:
-      return 2000 + (len - 7) * 1000;
+      return 3000 + (len - 7) * 1000;
   }
 }
 
@@ -196,6 +198,21 @@ function scoreOfSignature(sig: string): number {
     total += words.length * pointsForLength(sub.length);
   }
   SIG_SCORE.set(sig, total);
+  return total;
+}
+
+function rankScoreOfSignature(sig: string): number {
+  const cached = SIG_RANK_SCORE.get(sig);
+  if (cached !== undefined) return cached;
+  const minLen = Math.max(3, sig.length - 1);
+  let total = 0;
+  for (const sub of subSignatures(sig)) {
+    if (sub.length < minLen) continue;
+    const words = SIG_TO_WORDS.get(sub);
+    if (!words) continue;
+    total += words.length * pointsForLength(sub.length);
+  }
+  SIG_RANK_SCORE.set(sig, total);
   return total;
 }
 
@@ -237,11 +254,11 @@ export function randomWord(length: number): string {
 
 function getPrecomputedRankMap(length: number): Map<string, number> | null {
   const entry = PRECOMPUTED_TOP[String(length)];
-  if (!entry) return null;
+  if (!entry?.rankTop) return null;
   const cached = TOP_SIG_RANK.get(length);
   if (cached) return cached;
   const map = new Map<string, number>();
-  entry.top.forEach((w, i) => {
+  entry.rankTop.forEach((w, i) => {
     map.set(signatureOf(w), i + 1);
   });
   TOP_SIG_RANK.set(length, map);
@@ -259,12 +276,12 @@ function computeRankDynamic(sig: string, length: number): RankInfo | null {
   }
   const targetRep = repBySig.get(sig);
   if (targetRep === undefined) return null;
-  const targetScore = scoreOfSignature(sig);
+  const targetScore = rankScoreOfSignature(sig);
   let higher = 0;
   let equalAndBefore = 0;
   for (const [s, rep] of repBySig) {
     if (s === sig) continue;
-    const score = scoreOfSignature(s);
+    const score = rankScoreOfSignature(s);
     if (score > targetScore) {
       higher++;
     } else if (score === targetScore && rep < targetRep) {
@@ -272,6 +289,74 @@ function computeRankDynamic(sig: string, length: number): RankInfo | null {
     }
   }
   return { rank: higher + equalAndBefore + 1, total: repBySig.size };
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  word: string;
+  score: number;
+}
+
+export interface LeaderboardResult {
+  entries: LeaderboardEntry[];
+  total: number;
+}
+
+const LEADERBOARD_SORTED_CACHE = new Map<string, Array<[string, number]>>();
+
+function pointsScoreOfSignature(sig: string, minSubLen: number): number {
+  let total = 0;
+  for (const sub of subSignatures(sig)) {
+    if (sub.length < minSubLen) continue;
+    const words = SIG_TO_WORDS.get(sub);
+    if (!words) continue;
+    total += words.length * pointsForLength(sub.length);
+  }
+  return total;
+}
+
+function getSortedLeaderboard(
+  length: number,
+  minSubLen: number,
+): Array<[string, number]> {
+  if (!loaded) return [];
+  const cacheKey = `${length}-${minSubLen}`;
+  const cached = LEADERBOARD_SORTED_CACHE.get(cacheKey);
+  if (cached) return cached;
+
+  const reps = new Map<string, string>();
+  for (const w of WORDS) {
+    if (w.length !== length) continue;
+    const sig = signatureOf(w);
+    const existing = reps.get(sig);
+    if (!existing || w < existing) reps.set(sig, w);
+  }
+
+  const scored: Array<[string, number]> = [];
+  for (const [sig, w] of reps) {
+    scored.push([w, pointsScoreOfSignature(sig, minSubLen)]);
+  }
+  scored.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  LEADERBOARD_SORTED_CACHE.set(cacheKey, scored);
+  return scored;
+}
+
+export function getLeaderboard(
+  length: number,
+  minSubLen: number,
+  limit = 100,
+  offset = 0,
+): LeaderboardResult {
+  const sorted = getSortedLeaderboard(length, minSubLen);
+  const page = sorted.slice(offset, offset + limit);
+  return {
+    entries: page.map(([word, score], i) => ({
+      rank: offset + i + 1,
+      word,
+      score,
+    })),
+    total: sorted.length,
+  };
 }
 
 export function getRankOfWord(word: string): RankInfo | null {

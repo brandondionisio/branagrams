@@ -1,5 +1,15 @@
 export const MIN_LENGTHS = [2, 3, 4, 5, 6, 7] as const;
 export const GAME_PREFILL_CUSTOM_LETTERS_KEY = "prefillCustomLetters";
+export const SOLVER_PREFILL_LETTERS_KEY = "prefillLetters";
+
+export function cleanSolverLetters(raw: string): string {
+  return raw.toLowerCase().replace(/[^a-z?]/g, "");
+}
+
+export function solverPathForLetters(raw: string): string {
+  const cleaned = cleanSolverLetters(raw);
+  return cleaned ? `/solver/${encodeURIComponent(cleaned)}` : "/solver";
+}
 
 export const SOLVER_RESULTS_VIEWS = [
   { id: "word-list", label: "Word list" },
