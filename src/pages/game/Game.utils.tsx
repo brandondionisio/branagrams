@@ -266,7 +266,7 @@ export function MobileEnterButton({
       type="button"
       disabled={disabled}
       onClick={onSubmit}
-      className="w-full rounded-2xl border border-border-subtle bg-page-bg-secondary py-4 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
+      className="w-full mb-20 rounded-2xl border border-border-subtle bg-page-bg-secondary py-4 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
     >
       Enter
     </button>
@@ -275,7 +275,7 @@ export function MobileEnterButton({
 
 export function MobileLetterDock({ children }: { children: ReactNode }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border-subtle/60 bg-page-bg/95 px-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border-subtle/60 bg-page-bg/95 px-0.5 pt-2 pb-[calc(40px+env(safe-area-inset-bottom))] backdrop-blur-sm md:hidden">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
         {children}
       </div>
