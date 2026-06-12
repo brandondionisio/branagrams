@@ -259,7 +259,7 @@ export function MobileEnterButton({
         e.preventDefault();
         onSubmit();
       }}
-      className="mb-12 w-full touch-manipulation select-none rounded-2xl border border-border-subtle bg-page-bg-secondary py-4 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
+      className="mb-10 w-full touch-manipulation select-none rounded-2xl border border-border-subtle bg-page-bg-secondary py-7 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
     >
       Enter
     </button>
