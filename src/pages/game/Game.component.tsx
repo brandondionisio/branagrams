@@ -13,6 +13,7 @@ import {
   type Phase,
   type Duration,
   type LetterSource,
+  type MobileInputMode,
   DURATIONS,
   RANDOM_LENGTHS,
   MIN_LENGTHS,
@@ -28,6 +29,7 @@ import {
   GuessUnderlineInput,
   MobileLetterBank,
   MobileEnterButton,
+  MobileInputModeSwitch,
   MobileLetterDock,
   useMaxMd,
 } from "./Game.utils";
@@ -60,6 +62,8 @@ export function Game() {
   const [displayedPoints, setDisplayedPoints] = useState(0);
   const [pointsAnimating, setPointsAnimating] = useState(false);
   const [pickedTileIndices, setPickedTileIndices] = useState<number[]>([]);
+  const [mobileInputMode, setMobileInputMode] =
+    useState<MobileInputMode>("tiles");
   useEffect(() => {
     guessRef.current = guess;
   }, [guess]);
@@ -74,8 +78,8 @@ export function Game() {
     const next = [...pickedTileIndices, index];
     setPickedTileIndices(next);
     syncGuessFromPicks(next);
-    if (!isMobile) {
-      queueMicrotask(() => inputRef.current?.focus());
+    if (!isMobile || mobileInputMode === "keyboard") {
+      queueMicrotask(() => inputRef.current?.focus({ preventScroll: true }));
     }
   }
 
@@ -176,8 +180,10 @@ export function Game() {
       if (e.key === "Backspace") {
         e.preventDefault();
         removeLastLetter();
-        if (!isMobile) {
-          queueMicrotask(() => inputRef.current?.focus());
+        if (!isMobile || mobileInputMode === "keyboard") {
+          queueMicrotask(() =>
+            inputRef.current?.focus({ preventScroll: true }),
+          );
         }
         return;
       }
@@ -185,15 +191,17 @@ export function Game() {
       if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
         e.preventDefault();
         appendTypedLetter(e.key.toLowerCase());
-        if (!isMobile) {
-          queueMicrotask(() => inputRef.current?.focus());
+        if (!isMobile || mobileInputMode === "keyboard") {
+          queueMicrotask(() =>
+            inputRef.current?.focus({ preventScroll: true }),
+          );
         }
       }
     };
 
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [phase, displayLetters, pickedTileIndices, isMobile]);
+  }, [phase, displayLetters, pickedTileIndices, isMobile, mobileInputMode]);
 
   useEffect(() => {
     if (phase !== "ended") return;
@@ -305,10 +313,20 @@ export function Game() {
     setPickedTileIndices([]);
     setGuess("");
     setShowHelp(false);
+    setMobileInputMode("tiles");
     setTimeLeft(duration);
     setPhase("playing");
     if (!isMobile) {
       setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }
+
+  function changeMobileInputMode(mode: MobileInputMode) {
+    setMobileInputMode(mode);
+    if (mode === "tiles") {
+      inputRef.current?.blur();
+    } else {
+      queueMicrotask(() => inputRef.current?.focus({ preventScroll: true }));
     }
   }
 
@@ -496,7 +514,11 @@ export function Game() {
         )}
 
         {phase === "playing" && (
-          <div className="mx-auto max-w-2xl max-md:pb-80">
+          <div
+            className={`mx-auto max-w-2xl ${
+              isMobile && mobileInputMode === "tiles" ? "max-md:pb-80" : ""
+            }`}
+          >
             <div className="mb-6 flex items-end justify-between max-md:mb-4">
               <div>
                 <div className="mb-2 flex flex-row items-center text-xs text-text-secondary">
@@ -536,7 +558,7 @@ export function Game() {
             </div>
 
             <form ref={formRef} onSubmit={submit}>
-              {!isMobile && (
+              {(!isMobile || mobileInputMode === "keyboard") && (
                 <GuessUnderlineInput
                   slotCount={letters.length}
                   displayLetters={displayLetters}
@@ -546,7 +568,18 @@ export function Game() {
                   inputRef={inputRef}
                   onReturn={returnFromSlot}
                   onGuessKeyDown={handleGuessKeyDown}
+                  isMobile={isMobile}
+                  mobileInputMode={mobileInputMode}
                 />
+              )}
+
+              {isMobile && (
+                <div className="mb-4 max-md:mb-3">
+                  <MobileInputModeSwitch
+                    mode={mobileInputMode}
+                    onChange={changeMobileInputMode}
+                  />
+                </div>
               )}
 
               <div className="mt-4 mb-4 flex gap-3 flex-row items-baseline justify-between max-md:mt-3 max-md:mb-3">
@@ -621,7 +654,7 @@ export function Game() {
               )
             )}
 
-            {isMobile && (
+            {isMobile && mobileInputMode === "tiles" && (
               <MobileLetterDock>
                 <MobileEnterButton
                   disabled={guess.trim().length === 0}
@@ -637,6 +670,8 @@ export function Game() {
                   inputRef={inputRef}
                   onReturn={returnFromSlot}
                   onGuessKeyDown={handleGuessKeyDown}
+                  isMobile
+                  mobileInputMode="tiles"
                 />
                 <MobileLetterBank
                   tiles={displayLetters}

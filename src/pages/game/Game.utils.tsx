@@ -11,6 +11,7 @@ import {
   letterMultisetKey,
   groupPastelAtIndex,
 } from "../../lib/utils/anagramGroups";
+import type { MobileInputMode } from "./Game.config";
 
 export function animateNumber(
   from: number,
@@ -94,6 +95,8 @@ export function GuessUnderlineInput({
   onReturn,
   onGuessKeyDown,
   variant = "inline",
+  isMobile = false,
+  mobileInputMode = "tiles",
 }: {
   slotCount: number;
   displayLetters: string;
@@ -104,13 +107,18 @@ export function GuessUnderlineInput({
   onReturn: (slotIndex: number) => void;
   onGuessKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   variant?: "inline" | "dock";
+  isMobile?: boolean;
+  mobileInputMode?: MobileInputMode;
 }) {
-  const isMobile = useMaxMd();
   const inDock = variant === "dock";
+  const keyboardMode = !isMobile || mobileInputMode === "keyboard";
   const activeSlot = Math.min(guess.length, slotCount - 1);
-  const [inputFocused, setInputFocused] = useState(false);
 
   const slotCellClass = "relative z-10 aspect-square w-full";
+
+  function focusInput() {
+    inputRef.current?.focus({ preventScroll: true });
+  }
 
   return (
     <div
@@ -118,7 +126,7 @@ export function GuessUnderlineInput({
       aria-label="Enter your guess"
       className={`relative grid gap-1 rounded-2xl transition-colors ${
         inDock ? "px-0 py-2" : "mb-4 px-2 py-4"
-      } ${isMobile && !inDock ? "" : !isMobile ? "cursor-text" : ""} ${
+      } ${keyboardMode ? "cursor-text" : ""} ${
         flash === "ok"
           ? "bg-success/15"
           : flash === "bad"
@@ -128,39 +136,24 @@ export function GuessUnderlineInput({
               : "bg-page-bg-tertiary/50"
       }`}
       style={tileGridStyle(slotCount)}
-      onPointerDown={
-        !isMobile
-          ? () => {
-              inputRef.current?.focus({ preventScroll: true });
-            }
-          : undefined
-      }
+      onPointerDown={keyboardMode ? focusInput : undefined}
     >
       <input
         ref={inputRef}
         type="text"
-        inputMode="text"
+        inputMode={keyboardMode ? "text" : "none"}
         enterKeyHint="go"
         value={guess}
-        tabIndex={0}
+        tabIndex={keyboardMode ? 0 : -1}
         onChange={() => {}}
-        onFocus={() => isMobile && setInputFocused(true)}
-        onBlur={() => isMobile && setInputFocused(false)}
         onKeyDown={onGuessKeyDown}
         onPaste={(e) => e.preventDefault()}
         aria-label="Type letters for your guess"
+        aria-hidden={!keyboardMode}
         autoComplete="off"
         autoCapitalize="off"
         spellCheck={false}
-        className={`absolute -inset-y-1 inset-x-0 min-h-full w-full touch-manipulation border-0 bg-transparent outline-none ${
-          isMobile
-            ? `pointer-events-auto ${
-                inputFocused
-                  ? "z-10 flex items-center justify-center text-center font-display text-3xl uppercase tracking-[0.2em] text-ink caret-ink"
-                  : "z-1 text-base opacity-0"
-              }`
-            : "z-0 cursor-text text-base opacity-0 pointer-events-none"
-        }`}
+        className="pointer-events-none absolute -inset-y-1 inset-x-0 min-h-full w-full border-0 bg-transparent text-base opacity-0 outline-none"
       />
       {Array.from({ length: slotCount }, (_, slotIndex) => {
         const tileIndex = pickedIndices[slotIndex];
@@ -172,8 +165,8 @@ export function GuessUnderlineInput({
           <div
             key={slotIndex}
             className={`${slotCellClass}${
-              isMobile && !letter ? " pointer-events-none" : ""
-            }${isMobile && inputFocused ? " invisible" : ""}`}
+              !keyboardMode && !letter ? " pointer-events-none" : ""
+            }`}
           >
             {letter ? (
               <div
@@ -193,12 +186,8 @@ export function GuessUnderlineInput({
               <div
                 className={`flex h-full w-full flex-col items-center justify-end ${
                   inDock ? "pb-1" : "pb-2"
-                } ${!isMobile ? "cursor-text" : ""}`}
-                onPointerDown={
-                  !isMobile
-                    ? () => inputRef.current?.focus({ preventScroll: true })
-                    : undefined
-                }
+                } ${keyboardMode ? "cursor-text" : ""}`}
+                onPointerDown={keyboardMode ? focusInput : undefined}
               >
                 <div className="w-full flex-1" aria-hidden />
                 <div
@@ -343,6 +332,33 @@ export function Chip({
     >
       {children}
     </button>
+  );
+}
+
+export function MobileInputModeSwitch({
+  mode,
+  onChange,
+}: {
+  mode: MobileInputMode;
+  onChange: (mode: MobileInputMode) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Chip
+        active={mode === "tiles"}
+        onClick={() => onChange("tiles")}
+        size="sm"
+      >
+        Tiles
+      </Chip>
+      <Chip
+        active={mode === "keyboard"}
+        onClick={() => onChange("keyboard")}
+        size="sm"
+      >
+        Keyboard
+      </Chip>
+    </div>
   );
 }
 
