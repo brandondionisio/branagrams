@@ -188,7 +188,7 @@ export function Solver() {
                   type="button"
                   onClick={clearLetters}
                   aria-label="Clear letters"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-accent font-mono text-2xl leading-none text-white transition hover:opacity-90"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 flex sm:mb-0 mb-4 h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-accent font-mono text-2xl leading-none text-white transition hover:opacity-90"
                 >
                   ×
                 </button>
