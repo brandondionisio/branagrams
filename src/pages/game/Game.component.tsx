@@ -294,11 +294,7 @@ export function Game() {
     });
   }
 
-  function start() {
-    const word =
-      source === "random"
-        ? randomWord(randomLen)
-        : customLetters.toLowerCase().replace(/[^a-z]/g, "");
+  function beginRound(word: string) {
     if (!word) return;
     const list = findAnagrams(word, minLen);
     cancelPointsAnim.current?.();
@@ -319,6 +315,19 @@ export function Game() {
     if (!isMobile) {
       setTimeout(() => inputRef.current?.focus(), 50);
     }
+  }
+
+  function start() {
+    const word =
+      source === "random"
+        ? randomWord(randomLen)
+        : customLetters.toLowerCase().replace(/[^a-z]/g, "");
+    beginRound(word);
+  }
+
+  function replaySet() {
+    if (!letters) return;
+    beginRound(letters);
   }
 
   function changeMobileInputMode(mode: MobileInputMode) {
@@ -742,6 +751,15 @@ export function Game() {
                 >
                   Play again
                 </button>
+                {source === "random" && (
+                  <button
+                    type="button"
+                    onClick={replaySet}
+                    className="rounded-full border border-border-subtle bg-page-bg-secondary px-6 py-3 text-sm font-medium text-ink transition hover:border-ink/40"
+                  >
+                    Replay set
+                  </button>
+                )}
               </div>
             </div>
 
