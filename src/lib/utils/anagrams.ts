@@ -216,17 +216,12 @@ function rankScoreOfSignature(sig: string): number {
   return total;
 }
 
-const TOP_POOL_SIZE = 200;
+const TOP_POOL_SIZE = 1000;
+const ALL_BY_LENGTH = new Map<number, string[]>();
 
-function topScoringWordsOfLength(length: number): string[] {
-  const cached = TOP_BY_LENGTH.get(length);
+function representativesOfLength(length: number): string[] {
+  const cached = ALL_BY_LENGTH.get(length);
   if (cached) return cached;
-
-  const precomputed = PRECOMPUTED_TOP[String(length)];
-  if (precomputed) {
-    TOP_BY_LENGTH.set(length, precomputed.top);
-    return precomputed.top;
-  }
 
   const reps = new Map<string, string>();
   for (const w of WORDS) {
@@ -235,19 +230,52 @@ function topScoringWordsOfLength(length: number): string[] {
     const existing = reps.get(sig);
     if (!existing || w < existing) reps.set(sig, w);
   }
-  const scored: Array<[string, number]> = [];
-  for (const [sig, w] of reps) {
-    scored.push([w, scoreOfSignature(sig)]);
-  }
-  scored.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  const top = scored.slice(0, TOP_POOL_SIZE).map(([w]) => w);
-  TOP_BY_LENGTH.set(length, top);
-  return top;
+  const list = Array.from(reps.values());
+  ALL_BY_LENGTH.set(length, list);
+  return list;
 }
 
-export function randomWord(length: number): string {
+function computeTopScoringWords(length: number, limit: number): string[] {
+  const scored: Array<[string, number]> = [];
+  for (const w of representativesOfLength(length)) {
+    scored.push([w, scoreOfSignature(signatureOf(w))]);
+  }
+  scored.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  return scored.slice(0, limit).map(([w]) => w);
+}
+
+function topScoringWordsOfLength(
+  length: number,
+  minNeeded = TOP_POOL_SIZE,
+): string[] {
+  const cached = TOP_BY_LENGTH.get(length);
+  if (cached && cached.length >= minNeeded) return cached;
+
+  const precomputed = PRECOMPUTED_TOP[String(length)];
+  if (precomputed && precomputed.top.length >= minNeeded) {
+    TOP_BY_LENGTH.set(length, precomputed.top);
+    return precomputed.top;
+  }
+
+  // Precomputed pool too small for this dial setting — score at runtime.
+  const resolved = computeTopScoringWords(
+    length,
+    Math.max(TOP_POOL_SIZE, minNeeded),
+  );
+  TOP_BY_LENGTH.set(length, resolved);
+  return resolved;
+}
+
+/** Pick a random board of `length`. Pass `null` for any word; otherwise top N by score. */
+export function randomWord(
+  length: number,
+  poolSize: number | null = TOP_POOL_SIZE,
+): string {
   if (!loaded) return "";
-  const pool = topScoringWordsOfLength(length);
+  const pool =
+    poolSize === null
+      ? representativesOfLength(length)
+      : topScoringWordsOfLength(length, poolSize).slice(0, poolSize);
   if (pool.length === 0) return "";
   return pool[Math.floor(Math.random() * pool.length)];
 }

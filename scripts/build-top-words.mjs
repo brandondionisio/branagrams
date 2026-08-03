@@ -7,7 +7,7 @@ const ROOT = resolve(__dirname, "..");
 const DICT_PATH = resolve(ROOT, "public/dictionary.txt");
 const OUT_PATH = resolve(ROOT, "src/lib/data/topWords.json");
 
-const TOP_POOL_SIZE = 200;
+const TOP_POOL_SIZE = 1000;
 const MIN_LENGTH = 2;
 const MAX_LENGTH = 10;
 
@@ -19,13 +19,13 @@ function pointsForLength(len) {
     case 4:
       return 400;
     case 5:
-      return 800;
-    case 6:
       return 1200;
-    case 7:
+    case 6:
       return 2000;
+    case 7:
+      return 3000;
     default:
-      return 2000 + (len - 7) * 1000;
+      return 3000 + (len - 7) * 1000;
   }
 }
 

@@ -120,6 +120,68 @@ html.dark ::-moz-selection {
   animation: letter-return-bank 0.22s ease-out;
 }
 
+.board-quality-dial {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2.5rem;
+  background: transparent;
+}
+
+.board-quality-dial:focus {
+  outline: none;
+}
+
+.board-quality-dial:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+.board-quality-dial:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+.board-quality-dial::-webkit-slider-runnable-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--color-page-bg-tertiary) 0%,
+    var(--color-ink) 100%
+  );
+}
+
+.board-quality-dial::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: -0.45rem;
+  border-radius: 999px;
+  border: 2px solid var(--color-page-bg);
+  background: var(--color-ink);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+  cursor: pointer;
+}
+
+.board-quality-dial::-moz-range-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--color-page-bg-tertiary) 0%,
+    var(--color-ink) 100%
+  );
+}
+
+.board-quality-dial::-moz-range-thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  border: 2px solid var(--color-page-bg);
+  background: var(--color-ink);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+  cursor: pointer;
+}
+
 @media (max-width: 720px) {
   body {
     font-size: 0.9375rem;

@@ -11,7 +11,8 @@ import {
   letterMultisetKey,
   groupPastelAtIndex,
 } from "../../lib/utils/anagramGroups";
-import type { MobileInputMode } from "./Game.config";
+import type { MobileInputMode, BoardQuality } from "./Game.config";
+import { BOARD_QUALITIES, boardQualityLabel } from "./Game.config";
 
 export function animateNumber(
   from: number,
@@ -332,6 +333,51 @@ export function Chip({
     >
       {children}
     </button>
+  );
+}
+
+export function BoardQualityDial({
+  value,
+  onChange,
+}: {
+  value: BoardQuality;
+  onChange: (value: BoardQuality) => void;
+}) {
+  const index = BOARD_QUALITIES.indexOf(value);
+  const safeIndex = index < 0 ? 0 : index;
+
+  return (
+    <div>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <span className="font-display text-2xl tracking-tight text-ink">
+          {boardQualityLabel(value)}
+        </span>
+        <span className="font-mono text-xs text-text-secondary">
+          {value === null
+            ? "any dictionary word"
+            : `top ${value} boards`}
+        </span>
+      </div>
+
+      <input
+        type="range"
+        min={0}
+        max={BOARD_QUALITIES.length - 1}
+        step={1}
+        value={safeIndex}
+        onChange={(e) => {
+          const next = BOARD_QUALITIES[Number(e.target.value)];
+          if (next !== undefined) onChange(next);
+        }}
+        aria-label="Board quality"
+        className="board-quality-dial w-full cursor-pointer"
+      />
+
+      <div className="mt-2 flex justify-between font-mono text-[10px] uppercase tracking-wider text-text-secondary">
+        <span>Any</span>
+        <span>Top 10</span>
+      </div>
+    </div>
   );
 }
 

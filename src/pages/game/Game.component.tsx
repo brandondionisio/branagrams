@@ -14,9 +14,11 @@ import {
   type Duration,
   type LetterSource,
   type MobileInputMode,
+  type BoardQuality,
   DURATIONS,
   RANDOM_LENGTHS,
   MIN_LENGTHS,
+  DEFAULT_BOARD_QUALITY,
   GAME_PREFILL_CUSTOM_LETTERS_KEY,
 } from "./Game.config";
 import {
@@ -25,6 +27,7 @@ import {
   pointsForWordLength,
   Field,
   Chip,
+  BoardQualityDial,
   AnswersByLengthSection,
   GuessUnderlineInput,
   MobileLetterBank,
@@ -43,6 +46,9 @@ export function Game() {
   const [duration, setDuration] = useState<Duration>(60);
   const [source, setSource] = useState<LetterSource>("random");
   const [randomLen, setRandomLen] = useState(6);
+  const [boardQuality, setBoardQuality] = useState<BoardQuality>(
+    DEFAULT_BOARD_QUALITY,
+  );
   const [customLetters, setCustomLetters] = useState("");
   const [minLen, setMinLen] = useState(3);
 
@@ -215,7 +221,7 @@ export function Game() {
 
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [phase, source, randomLen, customLetters, minLen, duration, isMobile]);
+  }, [phase, source, randomLen, boardQuality, customLetters, minLen, duration, isMobile]);
 
   useEffect(() => {
     if (phase !== "setup") return;
@@ -257,6 +263,7 @@ export function Game() {
     source,
     customLetters,
     randomLen,
+    boardQuality,
     minLen,
     duration,
     isMobile,
@@ -320,7 +327,7 @@ export function Game() {
   function start() {
     const word =
       source === "random"
-        ? randomWord(randomLen)
+        ? randomWord(randomLen, boardQuality)
         : customLetters.toLowerCase().replace(/[^a-z]/g, "");
     beginRound(word);
   }
@@ -461,20 +468,29 @@ export function Game() {
               </Field>
 
               {source === "random" ? (
-                <Field label="Length">
-                  <div className="flex flex-wrap gap-1.5">
-                    {RANDOM_LENGTHS.map((n) => (
-                      <Chip
-                        key={n}
-                        size="sm"
-                        active={randomLen === n}
-                        onClick={() => setRandomLen(n)}
-                      >
-                        {n}
-                      </Chip>
-                    ))}
-                  </div>
-                </Field>
+                <>
+                  <Field label="Length">
+                    <div className="flex flex-wrap gap-1.5">
+                      {RANDOM_LENGTHS.map((n) => (
+                        <Chip
+                          key={n}
+                          size="sm"
+                          active={randomLen === n}
+                          onClick={() => setRandomLen(n)}
+                        >
+                          {n}
+                        </Chip>
+                      ))}
+                    </div>
+                  </Field>
+
+                  <Field label="Board quality">
+                    <BoardQualityDial
+                      value={boardQuality}
+                      onChange={setBoardQuality}
+                    />
+                  </Field>
+                </>
               ) : (
                 <Field label="Custom letters">
                   <input
