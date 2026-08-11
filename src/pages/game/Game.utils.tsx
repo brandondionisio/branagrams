@@ -125,7 +125,7 @@ export function GuessUnderlineInput({
     <div
       role="group"
       aria-label="Enter your guess"
-      className={`relative grid gap-1 rounded-2xl transition-colors ${
+      className={`relative grid gap-2 rounded-2xl transition-colors ${
         inDock ? "px-0 py-2" : "mb-4 px-2 py-4"
       } ${keyboardMode ? "cursor-text" : ""} ${
         flash === "ok"
@@ -218,7 +218,7 @@ export function MobileLetterBank({
   const count = tiles.length;
 
   return (
-    <div className="grid gap-1" style={tileGridStyle(count)}>
+    <div className="grid gap-2" style={tileGridStyle(count)}>
       {tiles.split("").map((letter, index) => {
         const used = picked.has(index);
         if (used) {
@@ -260,7 +260,7 @@ export function MobileEnterButton({
         e.preventDefault();
         onSubmit();
       }}
-      className="mb-4 w-full touch-manipulation select-none rounded-2xl border border-border-subtle bg-page-bg-secondary py-7 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
+      className="w-full touch-manipulation select-none rounded-2xl border border-border-subtle bg-page-bg-secondary py-7 font-mono text-sm font-semibold uppercase tracking-[0.25em] text-ink shadow-sm transition hover:border-ink/30 hover:bg-page-bg disabled:cursor-not-allowed disabled:opacity-40"
     >
       Enter
     </button>
@@ -353,9 +353,7 @@ export function BoardQualityDial({
           {boardQualityLabel(value)}
         </span>
         <span className="font-mono text-xs text-text-secondary">
-          {value === null
-            ? "any dictionary word"
-            : `top ${value} boards`}
+          {value === null ? "any dictionary word" : `top ${value} boards`}
         </span>
       </div>
 
