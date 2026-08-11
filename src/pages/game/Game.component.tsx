@@ -224,7 +224,17 @@ export function Game() {
 
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [phase, source, randomLen, boardQuality, customLetters, customLetterOrder, minLen, duration, isMobile]);
+  }, [
+    phase,
+    source,
+    randomLen,
+    boardQuality,
+    customLetters,
+    customLetterOrder,
+    minLen,
+    duration,
+    isMobile,
+  ]);
 
   useEffect(() => {
     if (phase !== "setup") return;
@@ -371,6 +381,25 @@ export function Game() {
       setPhase("ended");
     }
   }, [found, answers, phase]);
+
+  useEffect(() => {
+    if (phase !== "playing" || !isMobile || mobileInputMode !== "tiles") {
+      return;
+    }
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    const prevOverscroll = body.style.overscrollBehavior;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+      body.style.overscrollBehavior = prevOverscroll;
+    };
+  }, [phase, isMobile, mobileInputMode]);
 
   function submit(e: FormEvent) {
     e.preventDefault();

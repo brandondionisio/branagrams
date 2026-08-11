@@ -269,7 +269,7 @@ export function MobileEnterButton({
 
 export function MobileLetterDock({ children }: { children: ReactNode }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 touch-manipulation border-t border-border-subtle/60 bg-page-bg/95 px-0.5 pt-2 pb-[calc(20px+env(safe-area-inset-bottom))] backdrop-blur-sm overscroll-none md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-20 touch-none select-none border-t border-border-subtle/60 bg-page-bg/95 px-0.5 pt-2 pb-[calc(20px+env(safe-area-inset-bottom))] backdrop-blur-sm overscroll-none md:hidden">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
         {children}
       </div>
