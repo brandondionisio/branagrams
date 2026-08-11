@@ -257,7 +257,6 @@ function topScoringWordsOfLength(
     return precomputed.top;
   }
 
-  // Precomputed pool too small for this dial setting — score at runtime.
   const resolved = computeTopScoringWords(
     length,
     Math.max(TOP_POOL_SIZE, minNeeded),
@@ -266,7 +265,6 @@ function topScoringWordsOfLength(
   return resolved;
 }
 
-/** Pick a random board of `length`. Pass `null` for any word; otherwise top N by score. */
 export function randomWord(
   length: number,
   poolSize: number | null = TOP_POOL_SIZE,

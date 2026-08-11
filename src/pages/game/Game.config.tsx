@@ -1,6 +1,7 @@
 export type Phase = "setup" | "playing" | "ended";
 export type Duration = 30 | 60 | 90 | 0;
 export type LetterSource = "random" | "custom";
+export type CustomLetterOrder = "random" | "as-typed";
 export type MobileInputMode = "tiles" | "keyboard";
 export type BoardQuality = null | 1000 | 500 | 250 | 100 | 50 | 25 | 10;
 

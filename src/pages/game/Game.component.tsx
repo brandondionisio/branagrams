@@ -13,6 +13,7 @@ import {
   type Phase,
   type Duration,
   type LetterSource,
+  type CustomLetterOrder,
   type MobileInputMode,
   type BoardQuality,
   DURATIONS,
@@ -50,6 +51,8 @@ export function Game() {
     DEFAULT_BOARD_QUALITY,
   );
   const [customLetters, setCustomLetters] = useState("");
+  const [customLetterOrder, setCustomLetterOrder] =
+    useState<CustomLetterOrder>("random");
   const [minLen, setMinLen] = useState(3);
 
   const [letters, setLetters] = useState("");
@@ -221,7 +224,7 @@ export function Game() {
 
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [phase, source, randomLen, boardQuality, customLetters, minLen, duration, isMobile]);
+  }, [phase, source, randomLen, boardQuality, customLetters, customLetterOrder, minLen, duration, isMobile]);
 
   useEffect(() => {
     if (phase !== "setup") return;
@@ -262,6 +265,7 @@ export function Game() {
     ready,
     source,
     customLetters,
+    customLetterOrder,
     randomLen,
     boardQuality,
     minLen,
@@ -308,7 +312,9 @@ export function Game() {
     cancelPointsAnim.current = null;
     setPointsAnimating(false);
     setLetters(word);
-    setDisplayLetters(scramble(word));
+    const keepTypedOrder =
+      source === "custom" && customLetterOrder === "as-typed";
+    setDisplayLetters(keepTypedOrder ? word : scramble(word));
     setRankInfo(getRankOfWord(word));
     setAnswers(new Set(list));
     setFound([]);
@@ -492,17 +498,36 @@ export function Game() {
                   </Field>
                 </>
               ) : (
-                <Field label="Custom letters">
-                  <input
-                    type="text"
-                    value={customLetters}
-                    onChange={(e) => setCustomLetters(e.target.value)}
-                    placeholder="enter letters…"
-                    className="w-full border-b border-border-subtle bg-transparent pb-2 font-display text-2xl lowercase text-ink outline-none transition focus:border-accent"
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                </Field>
+                <>
+                  <Field label="Custom letters">
+                    <input
+                      type="text"
+                      value={customLetters}
+                      onChange={(e) => setCustomLetters(e.target.value)}
+                      placeholder="enter letters…"
+                      className="w-full border-b border-border-subtle bg-transparent pb-2 font-display text-2xl lowercase text-ink outline-none transition focus:border-accent"
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </Field>
+
+                  <Field label="Letter order">
+                    <div className="flex flex-wrap gap-1.5">
+                      <Chip
+                        active={customLetterOrder === "random"}
+                        onClick={() => setCustomLetterOrder("random")}
+                      >
+                        Random
+                      </Chip>
+                      <Chip
+                        active={customLetterOrder === "as-typed"}
+                        onClick={() => setCustomLetterOrder("as-typed")}
+                      >
+                        As typed
+                      </Chip>
+                    </div>
+                  </Field>
+                </>
               )}
 
               <Field label="Min answer length">
