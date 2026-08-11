@@ -12,7 +12,7 @@ import {
   useDictionary,
   type RankInfo,
 } from "../../lib/utils/anagrams";
-
+import { pointsForWordLength } from "../game/Game.utils";
 import {
   MIN_LENGTHS,
   SOLVER_PREFILL_LETTERS_KEY,
@@ -254,7 +254,12 @@ export function Solver() {
                       {" · "}
                     </span>
                   )}
-                  {results.length} words
+                  {results.length} words{" · "}
+                  {results.reduce(
+                    (acc, w) => acc + pointsForWordLength(w.length),
+                    0,
+                  )}{" "}
+                  points
                 </span>
               </div>
             </div>
@@ -270,7 +275,8 @@ export function Solver() {
                 {groupedByLength.map(([len, ws]) => (
                   <div key={len}>
                     <p className="mb-3 font-mono text-xs lowercase text-accent">
-                      {len} letters · {ws.length}
+                      {len} letters · {ws.length} words ·{" "}
+                      {ws.length * pointsForWordLength(len)} points
                     </p>
                     <div className="flex flex-wrap items-start gap-x-1.5 gap-y-2">
                       {groupWordsByLetterMultiset(ws).map(
